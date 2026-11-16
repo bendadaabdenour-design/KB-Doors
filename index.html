@@ -14,8 +14,21 @@
         return response.text();
       })
       .then(html => {
+        html = html
+          .replaceAll('DZ-WPC', 'KBDOOR')
+          .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com')
+          .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
+          .replaceAll('213550123456', '213796051801')
+          .replaceAll(
+            'Zone Industrielle de Rouiba, Alger',
+            '<a href="https://www.google.com/maps/search/?api=1&query=Birtouta%2C%20Algeria" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">بئر توتة, Birtouta, Algeria</a>'
+          )
+          .replace(
+            '<p class="text-sm text-stone-400 mt-1">Email : pedrobrono@gmail.com</p>',
+            '<p class="text-sm text-stone-400 mt-1">Email : <a href="mailto:pedrobrono@gmail.com" class="hover:text-amber-400 underline">pedrobrono@gmail.com</a></p>\n        <p class="text-sm text-stone-400 mt-1">YouTube : <a href="https://www.youtube.com/@pmbdari" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">@pmbdari</a></p>'
+          );
         document.open();
-        document.write(html.replaceAll('DZ-WPC', 'KBDOOR'));
+        document.write(html);
         document.close();
       })
       .catch(() => {
