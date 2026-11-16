@@ -36,11 +36,13 @@
         return response.text();
       })
       .then(html => {
+        const mapLink = '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Birtouta, Alger</a>';
         const updatedHtml = html
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
           .replaceAll('213550123456', '213796051801')
           .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com')
+          .replace('Usine et showroom basés à Rouiba, Alger.', `Usine et showroom basés à ${mapLink}.`)
           .replaceAll(
             'Zone Industrielle de Rouiba, Alger',
             '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">بئر توتة, Birtouta, Algeria</a>'
