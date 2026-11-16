@@ -11,6 +11,7 @@
     (async function loadSite() {
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
       const m2ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/image/m2.WEBP';
+      const m1ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/image/m1.WEBP';
 
       function replaceAtlasPreview(container) {
         if (!container) return;
@@ -20,6 +21,20 @@
         const image = document.createElement('img');
         image.src = m2ImageUrl;
         image.alt = 'Porte WPC Atlas Moderne';
+        image.className = 'mx-auto drop-shadow-xl object-contain';
+        image.style.width = preview.getAttribute('width') + 'px';
+        image.style.height = preview.getAttribute('height') + 'px';
+        preview.replaceWith(image);
+      }
+
+      function replaceSaharaPreview(container) {
+        if (!container) return;
+        const preview = container.querySelector('svg.drop-shadow-xl');
+        if (!preview) return;
+
+        const image = document.createElement('img');
+        image.src = m1ImageUrl;
+        image.alt = 'Porte WPC Sahara Classique';
         image.className = 'mx-auto drop-shadow-xl object-contain';
         image.style.width = preview.getAttribute('width') + 'px';
         image.style.height = preview.getAttribute('height') + 'px';
@@ -49,6 +64,32 @@
         if (configuratorTitle) {
           const previewPanel = configuratorTitle.closest('.max-w-7xl')?.querySelector('.lg\\:col-span-5');
           replaceAtlasPreview(previewPanel);
+        }
+      }
+
+      function ensureSaharaM1Photo() {
+        const app = document.getElementById('app-content');
+        if (!app) return;
+
+        // Replace the Sahara image in product cards without changing any of the copy.
+        Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
+          if (heading.textContent.trim() !== 'Porte WPC Sahara Classique') return;
+          const card = heading.closest('.bg-white.rounded-2xl');
+          if (card) replaceSaharaPreview(card);
+        });
+
+        // Replace the featured Sahara preview on the home page, preserving its caption.
+        Array.from(app.querySelectorAll('p')).forEach(function (caption) {
+          if (!caption.textContent.includes('Modèle Sahara Classique')) return;
+          replaceSaharaPreview(caption.parentElement);
+        });
+
+        // Use M1 in the configurator when Sahara Classique is selected.
+        const configuratorTitle = Array.from(app.querySelectorAll('h1'))
+          .find(function (heading) { return heading.textContent.includes('Porte WPC Sahara Classique'); });
+        if (configuratorTitle) {
+          const previewPanel = configuratorTitle.closest('.max-w-7xl')?.querySelector('.lg\\:col-span-5');
+          replaceSaharaPreview(previewPanel);
         }
       }
 
@@ -142,10 +183,16 @@
         document.write(html);
         document.close();
 
-        setTimeout(ensureAtlasM2Photo, 250);
+        setTimeout(function () {
+          ensureAtlasM2Photo();
+          ensureSaharaM1Photo();
+        }, 250);
         const app = document.getElementById('app-content');
         if (app) {
-          new MutationObserver(ensureAtlasM2Photo).observe(app, { childList: true, subtree: true });
+          new MutationObserver(function () {
+            ensureAtlasM2Photo();
+            ensureSaharaM1Photo();
+          }).observe(app, { childList: true, subtree: true });
         }
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
