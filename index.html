@@ -47,7 +47,7 @@
           .replace('Usine et showroom basés à Rouiba, Alger.', `Usine et showroom basés à ${mapLink}.`)
           .replaceAll(
             'Zone Industrielle de Rouiba, Alger',
-            '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">بئر توتة, BIRTOUTA, Alger</a>'
+            '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">بئر توتة, BIRTOUTA, Algérie</a>'
           )
           .replace(
             '<p class="text-sm text-stone-400 mt-1">Email : pedrobrono@gmail.com</p>',
@@ -62,7 +62,7 @@
                 .find(label => label.textContent.includes('Dimensions (Largeur x Hauteur)'));
               if (!heading || document.getElementById('custom-door-size')) return;
 
-              const match = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
+              const match = state.config.dimension.label.match(/(\d+)\s*x\s*(\d+)/i);
               const width = Number(state.config.width || (match && match[1]) || 83);
               const height = Number(state.config.height || (match && match[2]) || 204);
               state.config.width = width;
@@ -114,7 +114,11 @@
             installDoorSizeSliders();
           })();
         `;
-        updatedHtml = updatedHtml.replace('</body>', '<script>' + sizeConfigurator + '<\\/script></body>');
+
+        updatedHtml = updatedHtml.replace(
+          '</body>',
+          '<script>' + sizeConfigurator + '</scr' + 'ipt></body>'
+        );
 
         document.open();
         document.write(updatedHtml);
