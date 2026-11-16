@@ -10,6 +10,37 @@
   <script>
     (async function loadSite() {
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
+      const m1ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/images/m1.jpg';
+
+      function ensureCatalogLeadImage() {
+        const app = document.getElementById('app-content');
+        if (!app) return;
+
+        const catalogSection = Array.from(app.querySelectorAll('div.max-w-7xl')).find(function (section) {
+          return section.textContent.includes('Catalogue des Portes WPC');
+        });
+        if (!catalogSection) return;
+
+        const grid = catalogSection.querySelector('div.grid');
+        if (!grid || catalogSection.querySelector('[data-m1-catalog-lead="true"]')) return;
+
+        const lead = document.createElement('div');
+        lead.setAttribute('data-m1-catalog-lead', 'true');
+        lead.className = 'mb-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm';
+        lead.innerHTML = `
+          <img src="${m1ImageUrl}" alt="Porte M1" class="w-full h-64 sm:h-80 object-cover" style="display:block;" />
+          <div class="flex items-center justify-between gap-3 p-4 bg-white">
+            <div>
+              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">Nouveau</p>
+              <h3 class="text-xl font-bold text-stone-900">Porte M1</h3>
+            </div>
+            <button type="button" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-semibold" onclick="document.querySelector('[data-page=\'catalog\']')?.click && document.querySelector('[data-page=\'catalog\']').click()">Voir le catalogue</button>
+          </div>
+        `;
+
+        catalogSection.insertBefore(lead, grid);
+      }
+
       const sizeConfiguratorCode = `
         (function installCustomDoorSizeControls() {
           function installControls() {
@@ -19,7 +50,7 @@
               .find(function (label) { return /dimensions/i.test(label.textContent); });
             if (!heading || document.getElementById('custom-door-size')) return;
 
-            const currentDimension = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
+            const currentDimension = state.config.dimension.label.match(/(\d+)\s*x\s*(\d+)/i);
             const width = Number(state.config.width || (currentDimension && currentDimension[1]) || 83);
             const height = Number(state.config.height || (currentDimension && currentDimension[2]) || 204);
             state.config.width = width;
@@ -93,7 +124,6 @@
           .replaceAll('213550123456', '213796051801')
           .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com');
 
-        // Add the size controls to the site's existing script, avoiding a nested script tag.
         const renderEnd = html.lastIndexOf('    render();');
         if (renderEnd < 0) throw new Error('Point d’insertion du configurateur introuvable.');
         const renderLineEnd = renderEnd + '    render();'.length;
@@ -102,6 +132,15 @@
         document.open();
         document.write(html);
         document.close();
+
+        setTimeout(ensureCatalogLeadImage, 250);
+        const app = document.getElementById('app-content');
+        if (app) {
+          const observer = new MutationObserver(function () {
+            ensureCatalogLeadImage();
+          });
+          observer.observe(app, { childList: true, subtree: true });
+        }
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
         document.body.innerHTML = `
