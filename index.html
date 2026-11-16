@@ -37,7 +37,7 @@
       })
       .then(html => {
         const mapLink = '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Birtouta, Alger</a>';
-        const updatedHtml = html
+        let updatedHtml = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replace(/Rouiba/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
@@ -53,6 +53,68 @@
             '<p class="text-sm text-stone-400 mt-1">Email : pedrobrono@gmail.com</p>',
             '<p class="text-sm text-stone-400 mt-1">Email : <a href="mailto:pedrobrono@gmail.com" class="hover:text-amber-400 underline">pedrobrono@gmail.com</a></p>\n        <p class="text-sm text-stone-400 mt-1">WhatsApp : <a href="https://wa.me/213796051801" class="hover:text-amber-400 underline">+213 796 05 18 01</a></p>'
           );
+
+        const sizeConfigurator = `
+          (function () {
+            function installDoorSizeSliders() {
+              if (typeof state === 'undefined' || state.page !== 'configurator') return;
+              const heading = [...document.querySelectorAll('#app-content label')]
+                .find(label => label.textContent.includes('Dimensions (Largeur x Hauteur)'));
+              if (!heading || document.getElementById('custom-door-size')) return;
+
+              const match = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
+              const width = Number(state.config.width || (match && match[1]) || 83);
+              const height = Number(state.config.height || (match && match[2]) || 204);
+              state.config.width = width;
+              state.config.height = height;
+
+              const panel = document.createElement('div');
+              panel.id = 'custom-door-size';
+              panel.className = 'mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-4';
+              panel.innerHTML = ` + '`' + `
+                <p class="text-sm font-bold text-stone-900">Dimensions sur mesure</p>
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1"><label for="door-width">Largeur</label><output id="door-width-value">${width} cm</output></div>
+                  <input id="door-width" type="range" min="60" max="120" step="1" value="${width}" class="w-full accent-amber-600" aria-label="Largeur de la porte en centimètres">
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs font-semibold mb-1"><label for="door-height">Hauteur</label><output id="door-height-value">${height} cm</output></div>
+                  <input id="door-height" type="range" min="180" max="240" step="1" value="${height}" class="w-full accent-amber-600" aria-label="Hauteur de la porte en centimètres">
+                </div>
+                <p class="text-xs text-stone-600">Déplacez les curseurs pour ajuster la porte. Le tarif des dimensions personnalisées sera confirmé sur devis.</p>
+              ` + '`' + `;
+              heading.parentElement.appendChild(panel);
+
+              function updateSize() {
+                const nextWidth = Number(document.getElementById('door-width').value);
+                const nextHeight = Number(document.getElementById('door-height').value);
+                document.getElementById('door-width-value').value = nextWidth + ' cm';
+                document.getElementById('door-height-value').value = nextHeight + ' cm';
+                state.config.width = nextWidth;
+                state.config.height = nextHeight;
+                state.config.dimension = {
+                  label: nextWidth + ' x ' + nextHeight + ' cm (Sur mesure)',
+                  price: 0
+                };
+                render();
+              }
+
+              panel.querySelector('#door-width').addEventListener('input', updateSize);
+              panel.querySelector('#door-height').addEventListener('input', updateSize);
+
+              const preview = document.querySelector('#app-content svg.drop-shadow-xl');
+              if (preview) {
+                preview.setAttribute('width', Math.round(200 * width / 83));
+                preview.setAttribute('height', Math.round(350 * height / 204));
+              }
+            }
+
+            const observer = new MutationObserver(installDoorSizeSliders);
+            observer.observe(document.getElementById('app-content'), { childList: true, subtree: true });
+            installDoorSizeSliders();
+          })();
+        `;
+        updatedHtml = updatedHtml.replace('</body>', '<script>' + sizeConfigurator + '<\\/script></body>');
 
         document.open();
         document.write(updatedHtml);
