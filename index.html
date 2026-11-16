@@ -12,35 +12,44 @@
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
       const m2ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/images/m2.webp';
 
-      function ensureM2CatalogModel() {
+      function replaceAtlasPreview(container) {
+        if (!container) return;
+        const preview = container.querySelector('svg.drop-shadow-xl');
+        if (!preview || preview.dataset.m2ImageApplied === 'true') return;
+
+        const image = document.createElement('img');
+        image.src = m2ImageUrl;
+        image.alt = 'Porte WPC Atlas Moderne';
+        image.className = 'mx-auto drop-shadow-xl object-contain';
+        image.style.width = preview.getAttribute('width') + 'px';
+        image.style.height = preview.getAttribute('height') + 'px';
+        preview.replaceWith(image);
+      }
+
+      function ensureAtlasM2Photo() {
         const app = document.getElementById('app-content');
         if (!app) return;
 
-        const catalogSection = Array.from(app.querySelectorAll('div.max-w-7xl')).find(function (section) {
-          return section.textContent.includes('Catalogue des Portes WPC');
+        // Replace the Atlas image in product cards without changing any of the copy.
+        Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
+          if (heading.textContent.trim() !== 'Porte WPC Atlas Moderne') return;
+          const card = heading.closest('.bg-white.rounded-2xl');
+          if (card) replaceAtlasPreview(card);
         });
-        if (!catalogSection) return;
 
-        const grid = catalogSection.querySelector('div.grid');
-        if (!grid || catalogSection.querySelector('[data-m2-catalog-model="true"]')) return;
+        // Replace the featured Atlas preview on the home page, preserving its caption.
+        Array.from(app.querySelectorAll('p')).forEach(function (caption) {
+          if (!caption.textContent.includes('Modèle Atlas Moderne')) return;
+          replaceAtlasPreview(caption.parentElement);
+        });
 
-        const model = document.createElement('article');
-        model.setAttribute('data-m2-catalog-model', 'true');
-        model.className = 'mb-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm';
-        model.innerHTML = `
-          <img src="${m2ImageUrl}" alt="Modèle de porte M2" class="w-full h-64 sm:h-80 object-cover" style="display:block;" />
-          <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white">
-            <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">Nouveau modèle</p>
-              <h2 class="text-xl font-bold text-stone-900">Modèle M2</h2>
-            </div>
-            <button type="button" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-semibold" onclick="state.prefillContact = 'Bonjour, je souhaite un devis pour le modèle M2.'; navigate('contact');">
-              Demander un devis
-            </button>
-          </div>
-        `;
-
-        catalogSection.insertBefore(model, grid);
+        // Use the same photo in the configurator when Atlas is the selected model.
+        const configuratorTitle = Array.from(app.querySelectorAll('h1'))
+          .find(function (heading) { return heading.textContent.includes('Porte WPC Atlas Moderne'); });
+        if (configuratorTitle) {
+          const previewPanel = configuratorTitle.closest('.max-w-7xl')?.querySelector('.lg\\:col-span-5');
+          replaceAtlasPreview(previewPanel);
+        }
       }
 
       const sizeConfiguratorCode = `
@@ -80,10 +89,14 @@
               state.config.width = nextWidth;
               state.config.height = nextHeight;
               state.config.dimension = { label: nextWidth + ' x ' + nextHeight + ' cm (Sur mesure)', price: 0 };
-              const preview = document.querySelector('#app-content svg.drop-shadow-xl');
+              const preview = document.querySelector('#app-content svg.drop-shadow-xl, #app-content img.drop-shadow-xl');
               if (preview) {
                 preview.setAttribute('width', Math.round(200 * nextWidth / 83));
                 preview.setAttribute('height', Math.round(350 * nextHeight / 204));
+                if (preview.tagName === 'IMG') {
+                  preview.style.width = Math.round(200 * nextWidth / 83) + 'px';
+                  preview.style.height = Math.round(350 * nextHeight / 204) + 'px';
+                }
               }
               const summary = Array.from(document.querySelectorAll('#app-content p'))
                 .find(function (item) { return item.textContent.trim().startsWith('Dimensions :'); });
@@ -129,10 +142,10 @@
         document.write(html);
         document.close();
 
-        setTimeout(ensureM2CatalogModel, 250);
+        setTimeout(ensureAtlasM2Photo, 250);
         const app = document.getElementById('app-content');
         if (app) {
-          new MutationObserver(ensureM2CatalogModel).observe(app, { childList: true, subtree: true });
+          new MutationObserver(ensureAtlasM2Photo).observe(app, { childList: true, subtree: true });
         }
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
