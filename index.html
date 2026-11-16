@@ -172,7 +172,8 @@
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
           .replaceAll('213550123456', '213796051801')
-          .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com');
+          .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com')
+          .replace('<div class="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg">DZ</div>', '<div class="w-10 h-10 rounded-full bg-amber-700 text-white flex items-center justify-center font-extrabold text-sm ring-2 ring-amber-200 shadow" role="img" aria-label="Logo rond KBDOOR">KB</div>');
 
         const renderEnd = html.lastIndexOf('    render();');
         if (renderEnd < 0) throw new Error('Point d’insertion du configurateur introuvable.');
