@@ -10,9 +10,9 @@
   <script>
     (async function loadSite() {
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
-      const m1ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/images/m1.jpg';
+      const m2ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/images/m2.webp';
 
-      function ensureCatalogLeadImage() {
+      function ensureM2CatalogModel() {
         const app = document.getElementById('app-content');
         if (!app) return;
 
@@ -22,35 +22,36 @@
         if (!catalogSection) return;
 
         const grid = catalogSection.querySelector('div.grid');
-        if (!grid || catalogSection.querySelector('[data-m1-catalog-lead="true"]')) return;
+        if (!grid || catalogSection.querySelector('[data-m2-catalog-model="true"]')) return;
 
-        const lead = document.createElement('div');
-        lead.setAttribute('data-m1-catalog-lead', 'true');
-        lead.className = 'mb-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm';
-        lead.innerHTML = `
-          <img src="${m1ImageUrl}" alt="Porte M1" class="w-full h-64 sm:h-80 object-cover" style="display:block;" />
-          <div class="flex items-center justify-between gap-3 p-4 bg-white">
+        const model = document.createElement('article');
+        model.setAttribute('data-m2-catalog-model', 'true');
+        model.className = 'mb-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm';
+        model.innerHTML = `
+          <img src="${m2ImageUrl}" alt="Modèle de porte M2" class="w-full h-64 sm:h-80 object-cover" style="display:block;" />
+          <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white">
             <div>
-              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">Nouveau</p>
-              <h3 class="text-xl font-bold text-stone-900">Porte M1</h3>
+              <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-700">Nouveau modèle</p>
+              <h2 class="text-xl font-bold text-stone-900">Modèle M2</h2>
             </div>
-            <button type="button" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-semibold" onclick="document.querySelector('[data-page=\'catalog\']')?.click && document.querySelector('[data-page=\'catalog\']').click()">Voir le catalogue</button>
+            <button type="button" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm font-semibold" onclick="state.prefillContact = 'Bonjour, je souhaite un devis pour le modèle M2.'; navigate('contact');">
+              Demander un devis
+            </button>
           </div>
         `;
 
-        catalogSection.insertBefore(lead, grid);
+        catalogSection.insertBefore(model, grid);
       }
 
       const sizeConfiguratorCode = `
         (function installCustomDoorSizeControls() {
           function installControls() {
             if (typeof state === 'undefined' || state.page !== 'configurator') return;
-
             const heading = Array.from(document.querySelectorAll('#app-content label'))
               .find(function (label) { return /dimensions/i.test(label.textContent); });
             if (!heading || document.getElementById('custom-door-size')) return;
 
-            const currentDimension = state.config.dimension.label.match(/(\d+)\s*x\s*(\d+)/i);
+            const currentDimension = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
             const width = Number(state.config.width || (currentDimension && currentDimension[1]) || 83);
             const height = Number(state.config.height || (currentDimension && currentDimension[2]) || 204);
             state.config.width = width;
@@ -62,28 +63,23 @@
             panel.innerHTML =
               '<p class="text-sm font-bold text-stone-900">Dimensions sur mesure</p>' +
               '<div><div class="flex justify-between text-xs font-semibold mb-1"><label for="door-width">Largeur</label><output id="door-width-value">' + width + ' cm</output></div>' +
-              '<input id="door-width" type="range" min="60" max="120" step="1" value="' + width + '" class="w-full accent-amber-600" aria-label="Largeur de la porte en centimètres"></div>' +
-              '<div><div class="flex justify-between text-xs font-semibold mb-1"><label for="door-height">Longueur / hauteur</label><output id="door-height-value">' + height + ' cm</output></div>' +
-              '<input id="door-height" type="range" min="180" max="240" step="1" value="' + height + '" class="w-full accent-amber-600" aria-label="Hauteur de la porte en centimètres"></div>' +
-              '<p class="text-xs text-stone-600">Déplacez les curseurs pour ajuster les dimensions. Le tarif sur mesure sera confirmé sur devis.</p>';
+              '<input id="door-width" type="range" min="60" max="120" step="1" value="' + width + '" class="w-full accent-amber-600" aria-label="Largeur en centimètres"></div>' +
+              '<div><div class="flex justify-between text-xs font-semibold mb-1"><label for="door-height">Hauteur</label><output id="door-height-value">' + height + ' cm</output></div>' +
+              '<input id="door-height" type="range" min="180" max="240" step="1" value="' + height + '" class="w-full accent-amber-600" aria-label="Hauteur en centimètres"></div>' +
+              '<p class="text-xs text-stone-600">Le tarif des dimensions sur mesure sera confirmé sur devis.</p>';
             heading.parentElement.appendChild(panel);
 
             function updateSize() {
               const widthInput = document.getElementById('door-width');
               const heightInput = document.getElementById('door-height');
               if (!widthInput || !heightInput) return;
-
               const nextWidth = Number(widthInput.value);
               const nextHeight = Number(heightInput.value);
               document.getElementById('door-width-value').textContent = nextWidth + ' cm';
               document.getElementById('door-height-value').textContent = nextHeight + ' cm';
               state.config.width = nextWidth;
               state.config.height = nextHeight;
-              state.config.dimension = {
-                label: nextWidth + ' x ' + nextHeight + ' cm (Sur mesure)',
-                price: 0
-              };
-
+              state.config.dimension = { label: nextWidth + ' x ' + nextHeight + ' cm (Sur mesure)', price: 0 };
               const preview = document.querySelector('#app-content svg.drop-shadow-xl');
               if (preview) {
                 preview.setAttribute('width', Math.round(200 * nextWidth / 83));
@@ -133,13 +129,10 @@
         document.write(html);
         document.close();
 
-        setTimeout(ensureCatalogLeadImage, 250);
+        setTimeout(ensureM2CatalogModel, 250);
         const app = document.getElementById('app-content');
         if (app) {
-          const observer = new MutationObserver(function () {
-            ensureCatalogLeadImage();
-          });
-          observer.observe(app, { childList: true, subtree: true });
+          new MutationObserver(ensureM2CatalogModel).observe(app, { childList: true, subtree: true });
         }
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
