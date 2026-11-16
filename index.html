@@ -8,13 +8,40 @@
 <body>
   <p>Chargement de KBDOOR…</p>
   <script>
+    const logoSvg = `
+      <svg width="440" height="300" viewBox="0 0 440 300" xmlns="http://www.w3.org/2000/svg" aria-label="KBDOOR logo" role="img">
+        <defs>
+          <linearGradient id="kbGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f9df8f"/>
+            <stop offset="18%" stop-color="#d5a63e"/>
+            <stop offset="38%" stop-color="#f7d879"/>
+            <stop offset="56%" stop-color="#c4851d"/>
+            <stop offset="74%" stop-color="#f5d06d"/>
+            <stop offset="100%" stop-color="#8f6202"/>
+          </linearGradient>
+          <linearGradient id="kbGold2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#f4d77e"/>
+            <stop offset="100%" stop-color="#a66e00"/>
+          </linearGradient>
+        </defs>
+        <g transform="translate(0 8)">
+          <path d="M27 25 L165 25 L215 75 L215 202 L165 252 L27 252 L27 25 Z" fill="url(#kbGold2)" opacity="0.25"/>
+          <text x="40" y="220" font-size="220" font-weight="900" font-family="Georgia, 'Times New Roman', serif" fill="url(#kbGold)" stroke="#8a5a00" stroke-width="5" letter-spacing="-16">KB</text>
+          <path d="M132 118 L132 166 M158 118 L158 166 M110 120 L132 120 L132 142 L110 142 M158 120 L180 120 L180 142 L158 142" fill="none" stroke="#8a5a00" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M130 178 C126 186, 126 197, 132 204 C138 212, 147 214, 157 214 C168 214, 176 211, 182 203 C190 192, 186 177, 176 171 C169 166, 160 164, 152 165 C143 166, 136 170, 130 178 Z" fill="url(#kbGold2)" stroke="#8a5a00" stroke-width="4"/>
+          <circle cx="157" cy="188" r="8" fill="#8a5a00"/>
+        </g>
+        <text x="20" y="300" font-size="115" font-weight="900" font-family="Georgia, 'Times New Roman', serif" fill="url(#kbGold)" stroke="#8a5a00" stroke-width="4" letter-spacing="-8">DOOR</text>
+      </svg>
+    `;
+
     fetch('https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html')
       .then(response => {
         if (!response.ok) throw new Error('Impossible de charger le site.');
         return response.text();
       })
       .then(html => {
-        html = html
+        const updatedHtml = html
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com')
           .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
@@ -22,14 +49,18 @@
           .replaceAll(
             'Zone Industrielle de Rouiba, Alger',
             '<a href="https://www.google.com/maps?q=36.65017786243297,2.997543609145038" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">بئر توتة, Birtouta, Algeria</a>'
-          )
-          .replace(
-            '<p class="text-sm text-stone-400 mt-1">Email : pedrobrono@gmail.com</p>',
-            '<p class="text-sm text-stone-400 mt-1">Email : <a href="mailto:pedrobrono@gmail.com" class="hover:text-amber-400 underline">pedrobrono@gmail.com</a></p>\n        <p class="text-sm text-stone-400 mt-1">YouTube : <a href="https://www.youtube.com/@pmbdari" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">@pmbdari</a></p>'
           );
+
         document.open();
-        document.write(html);
+        document.write(updatedHtml);
         document.close();
+
+        setTimeout(() => {
+          const brand = document.querySelector('header .flex.items-center.gap-2.cursor-pointer');
+          if (brand) {
+            brand.innerHTML = logoSvg;
+          }
+        }, 100);
       })
       .catch(() => {
         document.body.textContent = 'Le site KBDOOR est temporairement indisponible. Veuillez réessayer.';
