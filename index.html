@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="application-version" content="1.0.0" />
   <title>KBDOOR | Portes WPC en Algérie</title>
+  <script src="./supabase-config.js"></script>
 </head>
 <body>
   <p style="font-family: sans-serif; padding: 2rem;">Chargement de KBDOOR…</p>
@@ -21,20 +22,25 @@
           throw new Error('Le fichier de l’application est incomplet.');
         }
 
-        // Keep the existing storefront customizations, without loading email.js.
+        // Keep storefront customizations and inject the public Supabase configuration.
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('+213 (0) 550 12 34 56', '0033669091152')
           .replaceAll('213550123456', '33669091152')
-          .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com');
+          .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com')
+          .replace('const SUPABASE_URL = "";', 'const SUPABASE_URL = window.KBDOOR_SUPABASE_CONFIG?.url || "";')
+          .replace('const SUPABASE_ANON_KEY = "";', 'const SUPABASE_ANON_KEY = window.KBDOOR_SUPABASE_CONFIG?.anonKey || "";')
+          .replace('SUPABASE_URL ? \'Connecté à Supabase\' : \'Stockage local actif\'', 'SUPABASE_URL && SUPABASE_ANON_KEY ? \'Connecté à Supabase\' : \'Stockage local actif\'')
+          .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', 'const response = await fetch(SUPABASE_URL + \'/rest/v1/\' + table, {')
+          .replace('body: JSON.stringify(payload)\n        });', 'body: JSON.stringify(payload)\n        });\n        if (!response.ok) throw new Error(\'HTTP \' + response.status + \': \' + await response.text());');
 
         document.open();
         document.write(html);
         document.close();
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
-        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion ou votre configuration.</p></main>';
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion Internet puis rechargez la page. Si le problème persiste, contactez bendadaabdenour@gmail.com.</p></main>';
       }
     })();
   </script>
