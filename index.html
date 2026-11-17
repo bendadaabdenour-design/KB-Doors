@@ -8,217 +8,206 @@
 <body>
   <p style="font-family: sans-serif; padding: 2rem;">Chargement de KBDOOR…</p>
   <script>
-    (async function loadSite() {
+    (async function () {
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
-      const logoImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/logo.jpg';
-      const m2ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/image/m2.WEBP';
-      const m1ImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/image/m1.WEBP';
-      const fallbackImageUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/logo.jpg';
-
-      const premiumStyles = `
-        <style>
-          .atlas-photo-frame {
-            position: relative; display: flex; align-items: center; justify-content: center;
-            min-height: 250px; padding: 2.25rem 1.25rem 1.25rem; overflow: hidden;
-            border: 1px solid rgba(180, 143, 91, .28); border-radius: 1.25rem;
-            background: radial-gradient(ellipse at 50% 38%, #fff 0%, #f5f0e8 48%, #e9e1d5 100%);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 18px 45px rgba(41,29,24,.12);
+      const raw = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/';
+      const customCode = `
+        (function () {
+          function escapeHtml(value) {
+            return String(value == null ? '' : value).replace(/[&<>\"']/g, function (char) {
+              return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' }[char];
+            });
           }
-          .atlas-photo-frame::before {
-            content: 'ATLAS  /  DESIGN CONTEMPORAIN'; position: absolute; top: .8rem; left: 1rem;
-            color: #80613d; font: 700 9px/1.2 ui-sans-serif, system-ui, sans-serif;
-            letter-spacing: .16em;
+          function itemSnapshot() {
+            var product = state.selectedProduct || {};
+            var config = state.config || {};
+            var quantity = Math.max(1, Number(config.qty) || 1);
+            var unitPrice = typeof calculateConfigTotal === 'function' ? calculateConfigTotal().unitPrice : (Number(product.basePrice) || 0);
+            return {
+              productId: product.id,
+              productName: product.name || 'Article',
+              category: product.category || '',
+              style: product.style || '',
+              color: config.color ? config.color.name : '',
+              colorHex: config.color ? config.color.hex : '',
+              colorPrice: config.color ? Number(config.color.price) || 0 : 0,
+              dimension: config.dimension ? config.dimension.label : '',
+              dimensionPrice: config.dimension ? Number(config.dimension.price) || 0 : 0,
+              width: config.width || null,
+              height: config.height || null,
+              opening: config.opening || '',
+              handle: config.handle || '',
+              handlePrice: Number(config.handlePrice) || 0,
+              frame: config.frame || '',
+              framePrice: Number(config.framePrice) || 0,
+              quantity: quantity,
+              qty: quantity,
+              unitPrice: unitPrice,
+              lineTotal: unitPrice * quantity
+            };
           }
-          .atlas-photo-frame::after {
-            content: ''; position: absolute; inset: .45rem; border: 1px solid rgba(255,255,255,.68);
-            border-radius: .95rem; pointer-events: none;
+          function itemDetails(item) {
+            return '<li class="py-3 border-b border-stone-200 last:border-0">' +
+              '<div class="font-bold">' + escapeHtml(item.productName) + ' — Quantité : ' + escapeHtml(item.quantity || item.qty || 1) + '</div>' +
+              '<div class="text-sm text-stone-600 mt-1">Catégorie : ' + escapeHtml(item.category || '—') +
+              ' | Coloris : ' + escapeHtml(item.color || '—') +
+              ' | Dimensions : ' + escapeHtml(item.dimension || '—') +
+              ' | Ouverture : ' + escapeHtml(item.opening || '—') + '</div>' +
+              (item.handle ? '<div class="text-sm text-stone-600">Poignée : ' + escapeHtml(item.handle) + '</div>' : '') +
+              (item.frame ? '<div class="text-sm text-stone-600">Cadre : ' + escapeHtml(item.frame) + '</div>' : '') +
+              '<div class="text-sm font-semibold text-stone-800 mt-1">Prix unitaire : ' + escapeHtml(Number(item.unitPrice || 0).toLocaleString('fr-DZ')) + ' DA | Total ligne : ' + escapeHtml(Number(item.lineTotal || 0).toLocaleString('fr-DZ')) + ' DA</div></li>';
           }
-          .atlas-photo-frame img {
-            position: relative; z-index: 1; display: block; max-width: 100%; max-height: 420px;
-            object-fit: contain; filter: drop-shadow(0 18px 15px rgba(35,25,18,.24));
-            transition: transform .35s ease, filter .35s ease;
+          function detailsPanel(title, items, id) {
+            if (!items || !items.length) return '';
+            return '<section id="' + id + '" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left">' +
+              '<h3 class="font-bold text-stone-900 mb-2">' + title + '</h3><ul>' + items.map(itemDetails).join('') + '</ul></section>';
           }
-          .atlas-photo-frame:hover img { transform: translateY(-4px); filter: drop-shadow(0 24px 18px rgba(35,25,18,.28)); }
-          .atlas-home-frame { padding: 2.5rem 1.5rem 1.25rem; background: radial-gradient(ellipse at 50% 45%, #51483d, #29241f 72%); }
-          .atlas-home-frame::before { color: #e5c28e; }
-          .atlas-home-frame::after { border-color: rgba(255,255,255,.12); }
-          .atlas-home-frame img { max-height: 390px; }
-          .atlas-config-frame { min-height: 420px; }
-          .atlas-config-frame img { max-height: 450px; }
-          .atlas-product-frame { min-height: 280px; border-radius: 0; border-left: 0; border-right: 0; border-top: 0; box-shadow: none; }
-          @media (max-width: 640px) {
-            .atlas-photo-frame { min-height: 230px; padding: 2.1rem .75rem .75rem; }
-            .atlas-photo-frame img { max-height: 320px; }
-          }
-        </style>`;
 
-      function replacePhoto(container, imageUrl, alt, variant) {
-        if (!container) return;
-        const preview = container.querySelector('svg.drop-shadow-xl');
-        if (!preview) return;
+          var originalAddToCart = addToCart;
+          addToCart = function () {
+            var details = itemSnapshot();
+            originalAddToCart();
+            var added = state.cart[state.cart.length - 1];
+            if (added) Object.assign(added, details);
+            saveCart();
+            render();
+          };
 
-        const width = Number(preview.getAttribute('width')) || 180;
-        const height = Number(preview.getAttribute('height')) || 320;
-        const image = document.createElement('img');
-        image.src = imageUrl;
-        image.alt = alt;
-        image.className = 'mx-auto object-contain';
-        image.width = width;
-        image.height = height;
-        image.style.width = Math.min(width, 320) + 'px';
-        image.style.height = Math.min(height, 450) + 'px';
-        image.loading = 'lazy';
-        image.onerror = function () {
-          this.onerror = null;
-          this.src = fallbackImageUrl;
-        };
+          var originalRequestQuote = requestCustomQuote;
+          requestCustomQuote = function () {
+            state.quoteItems = [itemSnapshot()];
+            state.prefillContact = 'Demande de devis — ' + state.quoteItems.map(function (item) {
+              return item.productName + ' | Quantité : ' + item.quantity + ' | Coloris : ' + item.color + ' | Dimensions : ' + item.dimension + ' | Ouverture : ' + item.opening + ' | Prix unitaire : ' + item.unitPrice + ' DA | Total : ' + item.lineTotal + ' DA';
+            }).join('\\n');
+            originalRequestQuote();
+            setTimeout(function () {
+              var field = document.getElementById('contact-msg');
+              if (field && !field.value.trim()) field.value = state.prefillContact;
+            }, 0);
+          };
 
-        const frame = document.createElement('div');
-        frame.className = 'atlas-photo-frame ' + (variant || '');
-        preview.replaceWith(frame);
-        frame.appendChild(image);
-      }
-
-      function ensureProductPhotos() {
-        const app = document.getElementById('app-content');
-        if (!app) return;
-
-        Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
-          const card = heading.closest('.bg-white.rounded-2xl');
-          if (!card) return;
-          if (heading.textContent.trim() === 'Porte WPC Atlas Moderne') {
-            replacePhoto(card, m2ImageUrl, 'Porte WPC Atlas Moderne — finition élégante', 'atlas-product-frame');
-          } else if (heading.textContent.trim() === 'Porte WPC Sahara Classique') {
-            replacePhoto(card, m1ImageUrl, 'Porte WPC Sahara Classique', '');
-          }
-        });
-
-        Array.from(app.querySelectorAll('p')).forEach(function (caption) {
-          const text = caption.textContent;
-          if (text.includes('Modèle Atlas Moderne')) {
-            replacePhoto(caption.parentElement, m2ImageUrl, 'Porte WPC Atlas Moderne — finition élégante', 'atlas-home-frame');
-            caption.classList.add('text-amber-100');
-          } else if (text.includes('Modèle Sahara Classique')) {
-            replacePhoto(caption.parentElement, m1ImageUrl, 'Porte WPC Sahara Classique', '');
-          }
-        });
-
-        const title = Array.from(app.querySelectorAll('h1')).find(function (heading) {
-          return heading.textContent.includes('Porte WPC Atlas Moderne');
-        });
-        if (title) {
-          const panel = title.closest('.max-w-7xl')?.querySelector('.lg\\:col-span-5');
-          replacePhoto(panel, m2ImageUrl, 'Porte WPC Atlas Moderne — finition élégante', 'atlas-config-frame');
-        }
-      }
-
-      const sizeConfiguratorCode = `
-        (function installCustomDoorSizeControls() {
-          function installControls() {
-            if (typeof state === 'undefined' || state.page !== 'configurator') return;
-            const heading = Array.from(document.querySelectorAll('#app-content label'))
-              .find(function (label) { return /dimensions/i.test(label.textContent); });
-            if (!heading || document.getElementById('custom-door-size')) return;
-
-            const currentDimension = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
-            const width = Number(state.config.width || (currentDimension && currentDimension[1]) || 83);
-            const height = Number(state.config.height || (currentDimension && currentDimension[2]) || 204);
-            state.config.width = width;
-            state.config.height = height;
-
-            const panel = document.createElement('div');
-            panel.id = 'custom-door-size';
-            panel.className = 'mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-4';
-            panel.innerHTML =
-              '<p class="text-sm font-bold text-stone-900">Dimensions sur mesure</p>' +
-              '<div><div class="flex justify-between text-xs font-semibold mb-1"><label for="door-width">Largeur</label><output id="door-width-value">' + width + ' cm</output></div>' +
-              '<input id="door-width" type="range" min="60" max="120" step="1" value="' + width + '" class="w-full accent-amber-600" aria-label="Largeur en centimètres"></div>' +
-              '<div><div class="flex justify-between text-xs font-semibold mb-1"><label for="door-height">Hauteur</label><output id="door-height-value">' + height + ' cm</output></div>' +
-              '<input id="door-height" type="range" min="180" max="240" step="1" value="' + height + '" class="w-full accent-amber-600" aria-label="Hauteur en centimètres"></div>' +
-              '<p class="text-xs text-stone-600">Le tarif des dimensions sur mesure sera confirmé sur devis.</p>';
-            heading.parentElement.appendChild(panel);
-
-            function updateSize() {
-              const widthInput = document.getElementById('door-width');
-              const heightInput = document.getElementById('door-height');
-              if (!widthInput || !heightInput) return;
-              const nextWidth = Number(widthInput.value);
-              const nextHeight = Number(heightInput.value);
-              document.getElementById('door-width-value').textContent = nextWidth + ' cm';
-              document.getElementById('door-height-value').textContent = nextHeight + ' cm';
-              state.config.width = nextWidth;
-              state.config.height = nextHeight;
-              state.config.dimension = { label: nextWidth + ' x ' + nextHeight + ' cm (Sur mesure)', price: 0 };
-              const preview = document.querySelector('#app-content svg.drop-shadow-xl, #app-content img.drop-shadow-xl, #app-content .atlas-photo-frame img');
-              if (preview) {
-                const nextPreviewWidth = Math.round(200 * nextWidth / 83);
-                const nextPreviewHeight = Math.round(350 * nextHeight / 204);
-                preview.setAttribute('width', nextPreviewWidth);
-                preview.setAttribute('height', nextPreviewHeight);
-                preview.style.width = nextPreviewWidth + 'px';
-                preview.style.height = nextPreviewHeight + 'px';
-              }
-              const summary = Array.from(document.querySelectorAll('#app-content p'))
-                .find(function (item) { return item.textContent.trim().startsWith('Dimensions :'); });
-              if (summary) summary.innerHTML = '<strong>Dimensions :</strong> ' + state.config.dimension.label;
+          var originalRenderContact = renderContact;
+          renderContact = function () {
+            var html = originalRenderContact();
+            if (state.quoteItems && state.quoteItems.length) {
+              html = html.replace('<div class="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200 shadow-sm space-y-5">',
+                '<div class="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200 shadow-sm space-y-5">' + detailsPanel('Articles inclus dans votre demande de devis', state.quoteItems, 'quote-items-summary'));
             }
+            return html;
+          };
 
-            panel.querySelector('#door-width').addEventListener('input', updateSize);
-            panel.querySelector('#door-height').addEventListener('input', updateSize);
-            panel.querySelector('#door-width').addEventListener('change', render);
-            panel.querySelector('#door-height').addEventListener('change', render);
-            updateSize();
+          var originalSaveToSupabase = saveToSupabase;
+          saveToSupabase = async function (table, payload) {
+            if (table === 'demandes_contact' && state.quoteItems && state.quoteItems.length) {
+              payload = Object.assign({}, payload, { items: state.quoteItems });
+            }
+            return originalSaveToSupabase(table, payload);
+          };
+
+          var originalSubmitContact = submitContact;
+          submitContact = async function () {
+            var quoteItems = (state.quoteItems || []).map(function (item) { return Object.assign({}, item); });
+            if (quoteItems.length) {
+              var field = document.getElementById('contact-msg');
+              var summary = quoteItems.map(function (item) {
+                return item.productName + ' | Quantité : ' + item.quantity + ' | Coloris : ' + item.color + ' | Dimensions : ' + item.dimension + ' | Ouverture : ' + item.opening + ' | Poignée : ' + item.handle + ' | Cadre : ' + item.frame + ' | Prix unitaire : ' + item.unitPrice + ' DA | Total : ' + item.lineTotal + ' DA';
+              }).join('\\n');
+              if (field && !field.value.includes(item.productName)) field.value = (field.value ? field.value + '\\n\\n' : '') + summary;
+            }
+            await originalSubmitContact();
+            if (quoteItems.length) {
+              var leads = JSON.parse(localStorage.getItem('dz_wpc_leads') || '[]');
+              if (leads.length) { leads[0].items = quoteItems; localStorage.setItem('dz_wpc_leads', JSON.stringify(leads)); }
+            }
+          };
+
+          var originalSubmitOrder = submitOrder;
+          submitOrder = async function (totalAmount) {
+            var orderedItems = (state.cart || []).map(function (item) {
+              var saved = Object.assign({}, item);
+              if (!saved.quantity) saved.quantity = saved.qty || 1;
+              if (!saved.lineTotal) saved.lineTotal = (Number(saved.unitPrice) || 0) * saved.quantity;
+              return saved;
+            });
+            await originalSubmitOrder(totalAmount);
+            if (orderedItems.length) {
+              var orders = JSON.parse(localStorage.getItem('dz_wpc_orders') || '[]');
+              if (orders.length) { orders[0].items = orderedItems; localStorage.setItem('dz_wpc_orders', JSON.stringify(orders)); }
+              var app = document.getElementById('app-content');
+              if (app) app.insertAdjacentHTML('beforeend', detailsPanel('Détail des articles commandés', orderedItems, 'order-items-summary'));
+            }
+          };
+
+          var originalRenderAdmin = renderAdmin;
+          renderAdmin = function () {
+            var html = originalRenderAdmin();
+            return html.replace(/(Commandes reçues[\\s\\S]*?<\\/h2>)/, '$1');
+          };
+
+          function replacePhoto(container, url, alt, variant) {
+            if (!container) return;
+            var preview = container.querySelector('svg.drop-shadow-xl');
+            if (!preview) return;
+            var image = document.createElement('img');
+            image.src = url;
+            image.alt = alt;
+            image.className = 'mx-auto object-contain';
+            image.width = Number(preview.getAttribute('width')) || 180;
+            image.height = Number(preview.getAttribute('height')) || 320;
+            image.style.width = Math.min(image.width, 320) + 'px';
+            image.style.height = Math.min(image.height, 450) + 'px';
+            image.loading = 'lazy';
+            image.onerror = function () { this.onerror = null; this.src = raw + 'logo.jpg'; };
+            var frame = document.createElement('div');
+            frame.className = 'atlas-photo-frame ' + (variant || '');
+            preview.replaceWith(frame);
+            frame.appendChild(image);
           }
-
-          const app = document.getElementById('app-content');
-          if (!app) return;
-          new MutationObserver(installControls).observe(app, { childList: true, subtree: true });
-          installControls();
+          function updatePhotos() {
+            var app = document.getElementById('app-content');
+            if (!app) return;
+            Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
+              var card = heading.closest('.bg-white.rounded-2xl');
+              if (heading.textContent.trim() === 'Porte WPC Atlas Moderne') replacePhoto(card, raw + 'image/m2.WEBP', heading.textContent, 'atlas-product-frame');
+              if (heading.textContent.trim() === 'Porte WPC Sahara Classique') replacePhoto(card, raw + 'image/m1.WEBP', heading.textContent, '');
+            });
+            Array.from(app.querySelectorAll('p')).forEach(function (caption) {
+              if (caption.textContent.includes('Modèle Atlas Moderne')) replacePhoto(caption.parentElement, raw + 'image/m2.WEBP', 'Porte WPC Atlas Moderne', 'atlas-home-frame');
+              if (caption.textContent.includes('Modèle Sahara Classique')) replacePhoto(caption.parentElement, raw + 'image/m1.WEBP', 'Porte WPC Sahara Classique', '');
+            });
+            var title = Array.from(app.querySelectorAll('h1')).find(function (heading) { return heading.textContent.includes('Porte WPC Atlas Moderne'); });
+            if (title) replacePhoto(title.closest('.max-w-7xl').querySelector('.lg\\:col-span-5'), raw + 'image/m2.WEBP', title.textContent, 'atlas-config-frame');
+          }
+          var app = document.getElementById('app-content');
+          if (app) new MutationObserver(updatePhotos).observe(app, { childList: true, subtree: true });
+          updatePhotos();
         })();
       `;
 
       try {
         const response = await fetch(sourceUrl, { cache: 'no-store' });
         if (!response.ok) throw new Error('HTTP ' + response.status);
-
         let html = await response.text();
-        if (!html.includes('id="app-content"') || !html.includes('function render()')) {
-          throw new Error('Le fichier source reçu est incomplet.');
-        }
-
+        if (!html.includes('id="app-content"') || !html.includes('function render()')) throw new Error('Le fichier source reçu est incomplet.');
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replace('Zone Industrielle de BIRTOUTA, Alger', '<a href="https://maps.app.goo.gl/UXCUg1bLVHbqtppz8" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Zone Industrielle de BIRTOUTA, Alger</a>')
-          .replace('<div class="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg">DZ</div>', '<img src="' + logoImageUrl + '" alt="KBDOOR — Portes WPC" class="w-10 h-10 rounded-lg object-contain" width="40" height="40" onerror="this.onerror=null;this.style.display=\'none\';this.insertAdjacentHTML(\'afterend\',\'<span class=\\\'w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg\\\'>KB</span>\')">')
+          .replace('<div class="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg">DZ</div>', '<img src="' + raw + 'logo.jpg" alt="KBDOOR — Portes WPC" class="w-10 h-10 rounded-lg object-contain" width="40" height="40">')
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
           .replaceAll('213550123456', '213796051801')
           .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com')
-          .replace('</head>', premiumStyles + '\n</head>');
-
+          .replace('</head>', '<style>.atlas-photo-frame{position:relative;display:flex;align-items:center;justify-content:center;min-height:250px;padding:2.25rem 1.25rem 1.25rem;overflow:hidden;border:1px solid rgba(180,143,91,.28);border-radius:1.25rem;background:radial-gradient(ellipse at 50% 38%,#fff,#f5f0e8 48%,#e9e1d5);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 18px 45px rgba(41,29,24,.12)}.atlas-photo-frame:before{content:"ATLAS / DESIGN CONTEMPORAIN";position:absolute;top:.8rem;left:1rem;color:#80613d;font:700 9px/1.2 system-ui,sans-serif;letter-spacing:.16em}.atlas-photo-frame img{position:relative;z-index:1;display:block;max-width:100%;max-height:420px;object-fit:contain;filter:drop-shadow(0 18px 15px rgba(35,25,18,.24))}.atlas-home-frame{padding:2.5rem 1.5rem 1.25rem;background:radial-gradient(ellipse at 50% 45%,#51483d,#29241f 72%)}.atlas-home-frame:before{color:#e5c28e}.atlas-config-frame{min-height:420px}.atlas-product-frame{min-height:280px;border-radius:0;border-left:0;border-right:0;border-top:0;box-shadow:none}@media(max-width:640px){.atlas-photo-frame{min-height:230px;padding:2.1rem .75rem .75rem}.atlas-photo-frame img{max-height:320px}}</style></head>');
         const renderEnd = html.lastIndexOf('    render();');
-        if (renderEnd < 0) throw new Error('Point d’insertion du configurateur introuvable.');
-        const renderLineEnd = renderEnd + '    render();'.length;
-        html = html.slice(0, renderLineEnd) + '\n' + sizeConfiguratorCode + html.slice(renderLineEnd);
-
+        if (renderEnd < 0) throw new Error('Point d’insertion introuvable.');
+        const end = renderEnd + '    render();'.length;
+        html = html.slice(0, end) + '\n' + customCode + html.slice(end);
         document.open();
         document.write(html);
         document.close();
-
-        const app = document.getElementById('app-content');
-        if (app) {
-          const observer = new MutationObserver(ensureProductPhotos);
-          observer.observe(app, { childList: true, subtree: true });
-          ensureProductPhotos();
-        }
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
-        document.body.innerHTML = `
-          <main style="max-width: 38rem; margin: 4rem auto; padding: 1.5rem; font: 16px/1.5 sans-serif; color: #292524;">
-            <h1>Le site KBDOOR n’a pas pu être chargé.</h1>
-            <p>Vérifiez votre connexion, puis réessayez.</p>
-            <button onclick="location.reload()" style="padding: .6rem 1rem; cursor: pointer;">Réessayer</button>
-          </main>`;
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion, puis réessayez.</p><button onclick="location.reload()">Réessayer</button></main>';
       }
     })();
   </script>
