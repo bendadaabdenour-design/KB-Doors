@@ -78,7 +78,7 @@
             state.quoteItems = [itemSnapshot()];
             state.prefillContact = 'Demande de devis — ' + state.quoteItems.map(function (item) {
               return item.productName + ' | Quantité : ' + item.quantity + ' | Coloris : ' + item.color + ' | Dimensions : ' + item.dimension + ' | Ouverture : ' + item.opening + ' | Prix unitaire : ' + item.unitPrice + ' DA | Total : ' + item.lineTotal + ' DA';
-            }).join('\\n');
+            }).join('\n');
             originalRequestQuote();
             setTimeout(function () {
               var field = document.getElementById('contact-msg');
@@ -111,8 +111,16 @@
               var field = document.getElementById('contact-msg');
               var summary = quoteItems.map(function (item) {
                 return item.productName + ' | Quantité : ' + item.quantity + ' | Coloris : ' + item.color + ' | Dimensions : ' + item.dimension + ' | Ouverture : ' + item.opening + ' | Poignée : ' + item.handle + ' | Cadre : ' + item.frame + ' | Prix unitaire : ' + item.unitPrice + ' DA | Total : ' + item.lineTotal + ' DA';
-              }).join('\\n');
-              if (field && !field.value.includes(item.productName)) field.value = (field.value ? field.value + '\\n\\n' : '') + summary;
+              }).join('\n');
+              if (field) {
+                var currentValue = (field.value || '').trim();
+                var alreadyHasItems = quoteItems.some(function (item) {
+                  return currentValue.includes(item.productName);
+                });
+                if (!alreadyHasItems) {
+                  field.value = currentValue ? currentValue + '\n\n' + summary : summary;
+                }
+              }
             }
             await originalSubmitContact();
             if (quoteItems.length) {
@@ -136,12 +144,6 @@
               var app = document.getElementById('app-content');
               if (app) app.insertAdjacentHTML('beforeend', detailsPanel('Détail des articles commandés', orderedItems, 'order-items-summary'));
             }
-          };
-
-          var originalRenderAdmin = renderAdmin;
-          renderAdmin = function () {
-            var html = originalRenderAdmin();
-            return html.replace(/(Commandes reçues[\\s\\S]*?<\\/h2>)/, '$1');
           };
 
           function replacePhoto(container, url, alt, variant) {
