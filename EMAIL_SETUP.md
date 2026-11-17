@@ -1,13 +1,14 @@
 # Configuration de l’envoi automatique des e-mails
 
-Le site est statique : il ne peut pas envoyer de courriels directement depuis le navigateur sans passer par un fournisseur d’e-mail. Les commandes et demandes de devis sont préparées dans `email.js` via EmailJS. **L’envoi reste inactif tant que les identifiants EmailJS ne sont pas configurés.**
+Le site est statique : les notifications de commandes et de demandes de devis sont envoyées depuis le navigateur avec le service FormSubmit. Aucun identifiant EmailJS n’est nécessaire.
 
 ## Mise en service
 
-1. Créez un compte EmailJS et reliez-y le service e-mail qui recevra les notifications.
-2. Créez un modèle EmailJS dont le champ destinataire (« To Email ») est fixé à `bendadaabdenour@gmail.com`. Configurez l’objet avec `{{subject}}` et le contenu du message avec `{{message}}`. Le modèle reçoit aussi `{{type}}` (`commande` ou `devis`).
-3. Dans `email.js`, renseignez les valeurs du service, du modèle et la clé publique EmailJS dans `serviceId`, `templateId` et `publicKey`. La clé publique est destinée à être utilisée côté navigateur ; ne mettez jamais de clé privée ou de mot de passe dans ce fichier.
-4. Dans les paramètres EmailJS, limitez les origines autorisées au domaine du site et activez les protections anti-abus disponibles.
-5. Testez une commande et une demande de devis. La confirmation indique si la notification a été envoyée ; les détails des articles comprennent le modèle, la quantité, les prix, la finition, les dimensions, l’ouverture, la quincaillerie et le cadre lorsqu’ils sont disponibles.
+1. Vérifiez dans `email.js` l’adresse de réception configurée dans `recipient` (actuellement `bendadaabdenour@gmail.com`).
+2. Publiez le site puis effectuez une première commande test ou demande de devis.
+3. FormSubmit envoie un e-mail de vérification à cette adresse lors du premier envoi. Ouvrez-le et cliquez sur le lien de confirmation pour activer la réception. Vérifiez aussi les courriers indésirables.
+4. Refaites un test après activation. La page affiche si la notification a été acceptée ou si l’envoi a échoué ; en cas d’échec, consultez la console du navigateur pour les détails.
 
-Les demandes de devis libres contiennent le message saisi par le client. Les demandes lancées depuis le configurateur incluent aussi la configuration et la quantité choisies.
+Les commandes incluent les coordonnées du client, les articles, les options, la livraison et le total. Les demandes de devis incluent les coordonnées, le message et, si la demande vient du configurateur, les détails du produit.
+
+L’adresse de réception est visible dans le code côté navigateur. N’y placez pas de mot de passe, de clé privée ou d’autre secret. Configurez les protections anti-spam disponibles auprès de FormSubmit et surveillez les soumissions abusives.

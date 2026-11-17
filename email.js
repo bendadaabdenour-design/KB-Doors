@@ -1,12 +1,9 @@
 /*
- * Email notifications for orders and quote requests.
- * EmailJS credentials are public client-side identifiers, not secrets. Configure
- * an EmailJS service/template and restrict its allowed origins before use.
+ * Email notifications for orders and quote requests, sent through FormSubmit.
+ * The recipient address is public in client-side code; use FormSubmit's
+ * activation and spam protections, and do not put private credentials here.
  */
 window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
-  serviceId: '',
-  templateId: '',
-  publicKey: '',
   recipient: 'bendadaabdenour@gmail.com'
 };
 
@@ -34,29 +31,35 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
   }
 
   async function sendEmail(subject, message, type) {
-    if (!config.serviceId || !config.templateId || !config.publicKey) {
-      throw new Error('EmailJS non configuré. Renseignez serviceId, templateId et publicKey dans email.js.');
+    if (!config.recipient) {
+      throw new Error('Adresse destinataire FormSubmit manquante dans email.js.');
     }
 
-    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    const endpoint = `https://formsubmit.co/ajax/${encodeURIComponent(config.recipient)}`;
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify({
-        service_id: config.serviceId,
-        template_id: config.templateId,
-        user_id: config.publicKey,
-        template_params: {
-          to_email: config.recipient,
-          subject,
-          message,
-          type
-        }
+        _subject: subject,
+        message,
+        type
       })
     });
 
-    if (!response.ok) {
-      const reason = await response.text().catch(() => 'Erreur du service email');
-      throw new Error(reason || 'Échec de l’envoi du courriel.');
+    const responseText = await response.text().catch(() => '');
+    let result = {};
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch (error) {
+      result = { message: responseText };
+    }
+
+    if (!response.ok || result.success === false || result.success === 'false') {
+      const reason = result.message || result.error || responseText || 'Échec de l’envoi du courriel.';
+      throw new Error(reason);
     }
   }
 
