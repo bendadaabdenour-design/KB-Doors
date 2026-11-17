@@ -22,7 +22,8 @@
           throw new Error('Le fichier de l’application est incomplet.');
         }
 
-        // Keep storefront customizations and inject the public Supabase configuration.
+        // Keep storefront customizations, configure Supabase, and route orders
+        // through the atomic RPC that stores both the order and its article rows.
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
@@ -32,8 +33,8 @@
           .replace('const SUPABASE_URL = "";', 'const SUPABASE_URL = window.KBDOOR_SUPABASE_CONFIG?.url || "";')
           .replace('const SUPABASE_ANON_KEY = "";', 'const SUPABASE_ANON_KEY = window.KBDOOR_SUPABASE_CONFIG?.anonKey || "";')
           .replace('SUPABASE_URL ? \'Connecté à Supabase\' : \'Stockage local actif\'', 'SUPABASE_URL && SUPABASE_ANON_KEY ? \'Connecté à Supabase\' : \'Stockage local actif\'')
-          .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', 'const response = await fetch(SUPABASE_URL + \'/rest/v1/\' + table, {')
-          .replace('body: JSON.stringify(payload)\n        });', 'body: JSON.stringify(payload)\n        });\n        if (!response.ok) throw new Error(\'HTTP \' + response.status + \': \' + await response.text());');
+          .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', 'const isOrder = table === \'commandes\'; const endpoint = isOrder ? \'/rest/v1/rpc/enregistrer_commande\' : \'/rest/v1/\' + table; const response = await fetch(SUPABASE_URL + endpoint, {')
+          .replace('body: JSON.stringify(payload)\n        });', 'body: JSON.stringify(table === \'commandes\' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error(\'HTTP \' + response.status + \': \' + await response.text());');
 
         document.open();
         document.write(html);
