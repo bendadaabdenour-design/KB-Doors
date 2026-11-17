@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="application-version" content="1.0.0" />
   <title>KBDOOR | Portes WPC en Algérie</title>
 </head>
 <body>
@@ -33,7 +34,7 @@
         document.close();
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
-        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion Internet puis rechargez la page.</p><p style="color:#78716c">' + String(error.message || error) + '</p></main>';
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion ou réessayez plus tard.</p></main>';
       }
     })();
   </script>
