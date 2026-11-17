@@ -10,88 +10,30 @@
   <script>
     (async function loadSite() {
       const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
-      const raw = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/';
-      const imageCode = `
-        (function restoreDoorImages() {
-          function addImage(container, fileName, alt) {
-            if (!container) return;
-            var svg = container.querySelector('svg.drop-shadow-xl');
-            if (!svg) return;
-            var image = document.createElement('img');
-            var candidates = [raw + 'image/' + fileName, raw + 'image/' + fileName.toLowerCase()];
-            var candidateIndex = 0;
-            image.alt = alt;
-            image.className = 'mx-auto object-contain';
-            image.style.display = 'block';
-            image.style.width = 'min(100%, 320px)';
-            image.style.height = 'auto';
-            image.style.maxHeight = '420px';
-            image.loading = 'lazy';
-            image.onerror = function () {
-              candidateIndex += 1;
-              if (candidateIndex < candidates.length) { image.src = candidates[candidateIndex]; return; }
-              image.onerror = null;
-              image.style.display = 'none';
-            };
-            image.src = candidates[0];
-            svg.replaceWith(image);
-          }
-          function findSvgContainer(element) {
-            var node = element;
-            for (var i = 0; node && i < 7; i += 1, node = node.parentElement) {
-              if (node.querySelector && node.querySelector('svg.drop-shadow-xl')) return node;
-            }
-            return null;
-          }
-          function refresh() {
-            var app = document.getElementById('app-content');
-            if (!app) return;
-            Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
-              var text = heading.textContent.trim();
-              if (text === 'Porte WPC Atlas Moderne') addImage(findSvgContainer(heading), 'm2.WEBP', text);
-              if (text === 'Porte WPC Sahara Classique') addImage(findSvgContainer(heading), 'm1.WEBP', text);
-            });
-            Array.from(app.querySelectorAll('p')).forEach(function (caption) {
-              var text = caption.textContent || '';
-              if (text.includes('Modèle Atlas Moderne')) addImage(findSvgContainer(caption), 'm2.WEBP', 'Porte WPC Atlas Moderne');
-              if (text.includes('Modèle Sahara Classique')) addImage(findSvgContainer(caption), 'm1.WEBP', 'Porte WPC Sahara Classique');
-            });
-            var title = Array.from(app.querySelectorAll('h1')).find(function (heading) { return heading.textContent.includes('Porte WPC Atlas Moderne'); });
-            if (title) {
-              var page = title.closest('.max-w-7xl');
-              var panel = page && page.querySelector('.lg\\:col-span-5');
-              addImage(panel, 'm2.WEBP', title.textContent);
-            }
-          }
-          var app = document.getElementById('app-content');
-          if (app) new MutationObserver(refresh).observe(app, { childList: true, subtree: true });
-          refresh();
-        })();
-      `;
+
       try {
         const response = await fetch(sourceUrl, { cache: 'no-store' });
         if (!response.ok) throw new Error('HTTP ' + response.status);
+
         let html = await response.text();
-        if (!html.includes('id="app-content"') || !html.includes('function render()')) throw new Error('La source du configurateur est incomplète.');
+        if (!html.includes('id="app-content"') || !html.includes('function render()')) {
+          throw new Error('Le fichier de l’application est incomplet.');
+        }
+
+        // Keep the existing storefront customizations, without loading email.js.
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
-          .replace('Zone Industrielle de BIRTOUTA, Alger', '<a href="https://maps.app.goo.gl/UXCUg1bLVHbqtppz8" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Zone Industrielle de BIRTOUTA, Alger</a>')
-          .replace('<div class="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg">DZ</div>', '<img src="' + raw + 'logo.jpg" alt="KBDOOR — Portes WPC" class="h-9 w-9 object-contain rounded-lg" width="40" height="40">')
           .replaceAll('DZ-WPC', 'KBDOOR')
           .replaceAll('+213 (0) 550 12 34 56', '0033669091152')
           .replaceAll('213550123456', '33669091152')
           .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com');
-        const renderEnd = html.lastIndexOf('    render();');
-        if (renderEnd < 0) throw new Error('Insertion du correctif des images impossible.');
-        const end = renderEnd + '    render();'.length;
-        html = html.slice(0, end) + '\n' + imageCode + html.slice(end);
-        html = html.replace('</body>', '<script src="' + raw + 'email.js"></script></body>');
+
         document.open();
         document.write(html);
         document.close();
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
-        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion, puis réessayez.</p><button onclick="location.reload()" style="padding:.6rem 1rem;cursor:pointer">Réessayer</button></main>';
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion Internet puis rechargez la page.</p><p style="color:#78716c">' + String(error.message || error) + '</p></main>';
       }
     })();
   </script>
