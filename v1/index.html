@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="application-version" content="1.0.0" />
+  <title>KBDOOR | Portes WPC en Algérie</title>
+</head>
+<body>
+  <p style="font-family: sans-serif; padding: 2rem;">Chargement de KBDOOR…</p>
+  <script>
+    (async function loadSite() {
+      const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
+
+      try {
+        const response = await fetch(sourceUrl, { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+
+        let html = await response.text();
+        if (!html.includes('id="app-content"') || !html.includes('function render()')) {
+          throw new Error('Le fichier de l’application est incomplet.');
+        }
+
+        // Keep the existing storefront customizations, without loading email.js.
+        html = html
+          .replace(/ROUIBA/gi, 'BIRTOUTA')
+          .replaceAll('DZ-WPC', 'KBDOOR')
+          .replaceAll('+213 (0) 550 12 34 56', '0033669091152')
+          .replaceAll('213550123456', '33669091152')
+          .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com');
+
+        document.open();
+        document.write(html);
+        document.close();
+      } catch (error) {
+        console.error('Échec du chargement de KBDOOR :', error);
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion ou réessayez plus tard.</p></main>';
+      }
+    })();
+  </script>
+</body>
+</html>
