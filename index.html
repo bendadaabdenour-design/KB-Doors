@@ -8,15 +8,100 @@
 <body>
   <p style="font-family: sans-serif; padding: 2rem;">Chargement de KBDOOR…</p>
   <script>
-    (async function () {
-      const restoredVersion = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/93f9b15fd74ebd73348d37dcce0b7f4f67c3cbf2/index.html';
+    (async function loadSite() {
+      const sourceUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/aaf6e74a89c8d00df1b0fad9aa99767ea3005448/index.html';
+      const logoUrl = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/logo.jpg';
+      const assetBase = 'https://raw.githubusercontent.com/bendadaabdenour-design/KB-Doors/main/';
+      const customCode = `
+        (function restoreConfiguratorEnhancements() {
+          function updatePhotos() {
+            var app = document.getElementById('app-content');
+            if (!app) return;
+            Array.from(app.querySelectorAll('h3')).forEach(function (heading) {
+              var card = heading.closest('.bg-white.rounded-2xl');
+              if (!card || card.querySelector('.kbdoor-photo')) return;
+              var file = heading.textContent.trim() === 'Porte WPC Atlas Moderne' ? 'm2.WEBP' :
+                heading.textContent.trim() === 'Porte WPC Sahara Classique' ? 'm1.WEBP' : null;
+              if (file) replacePhoto(card, file, heading.textContent);
+            });
+            Array.from(app.querySelectorAll('p')).forEach(function (caption) {
+              var file = caption.textContent.includes('Modèle Atlas Moderne') ? 'm2.WEBP' :
+                caption.textContent.includes('Modèle Sahara Classique') ? 'm1.WEBP' : null;
+              if (file && !caption.parentElement.querySelector('.kbdoor-photo')) replacePhoto(caption.parentElement, file, caption.textContent);
+            });
+            var title = Array.from(app.querySelectorAll('h1')).find(function (item) { return item.textContent.includes('Porte WPC Atlas Moderne'); });
+            if (title) {
+              var panel = title.closest('.max-w-7xl') && title.closest('.max-w-7xl').querySelector('.lg\\:col-span-5');
+              if (panel && !panel.querySelector('.kbdoor-photo')) replacePhoto(panel, 'm2.WEBP', title.textContent);
+            }
+          }
+          function replacePhoto(container, file, alt) {
+            var preview = container && container.querySelector('svg.drop-shadow-xl');
+            if (!preview) return;
+            var image = document.createElement('img');
+            image.className = 'kbdoor-photo mx-auto object-contain';
+            image.src = assetBase + 'image/' + file;
+            image.alt = alt;
+            image.style.maxWidth = '100%';
+            image.style.maxHeight = '420px';
+            image.onerror = function () { this.onerror = null; this.src = logoUrl; };
+            preview.replaceWith(image);
+          }
+          function installSizeControls() {
+            if (typeof state === 'undefined' || state.page !== 'configurator' || document.getElementById('custom-door-size')) return;
+            var label = Array.from(document.querySelectorAll('#app-content label')).find(function (item) { return /dimensions/i.test(item.textContent); });
+            if (!label || !state.config || !state.config.dimension) return;
+            var match = state.config.dimension.label.match(/(\\d+)\\s*x\\s*(\\d+)/i);
+            var width = Number(state.config.width || (match && match[1]) || 83);
+            var height = Number(state.config.height || (match && match[2]) || 204);
+            var panel = document.createElement('div');
+            panel.id = 'custom-door-size';
+            panel.className = 'mt-4 p-4 rounded-xl border border-amber-200 bg-amber-50 space-y-3';
+            panel.innerHTML = '<p class="text-sm font-bold text-stone-900">Dimensions sur mesure</p>' +
+              '<label class="block text-xs font-semibold">Largeur : <output id="door-width-value">' + width + ' cm</output><input id="door-width" type="range" min="60" max="120" value="' + width + '" class="w-full"></label>' +
+              '<label class="block text-xs font-semibold">Hauteur : <output id="door-height-value">' + height + ' cm</output><input id="door-height" type="range" min="180" max="240" value="' + height + '" class="w-full"></label>' +
+              '<p class="text-xs text-stone-600">Le tarif des dimensions sur mesure sera confirmé sur devis.</p>';
+            label.parentElement.appendChild(panel);
+            function updateSize() {
+              width = Number(panel.querySelector('#door-width').value);
+              height = Number(panel.querySelector('#door-height').value);
+              panel.querySelector('#door-width-value').textContent = width + ' cm';
+              panel.querySelector('#door-height-value').textContent = height + ' cm';
+              state.config.width = width;
+              state.config.height = height;
+              state.config.dimension = { label: width + ' x ' + height + ' cm (Sur mesure)', price: 0 };
+              var summary = Array.from(document.querySelectorAll('#app-content p')).find(function (item) { return item.textContent.trim().startsWith('Dimensions :'); });
+              if (summary) summary.innerHTML = '<strong>Dimensions :</strong> ' + state.config.dimension.label;
+            }
+            panel.querySelector('#door-width').addEventListener('input', updateSize);
+            panel.querySelector('#door-height').addEventListener('input', updateSize);
+            panel.querySelector('#door-width').addEventListener('change', render);
+            panel.querySelector('#door-height').addEventListener('change', render);
+            updateSize();
+          }
+          var app = document.getElementById('app-content');
+          if (app) new MutationObserver(function () { updatePhotos(); installSizeControls(); }).observe(app, { childList: true, subtree: true });
+          updatePhotos();
+          installSizeControls();
+        })();
+      `;
       try {
-        const response = await fetch(restoredVersion, { cache: 'no-store' });
+        var response = await fetch(sourceUrl, { cache: 'no-store' });
         if (!response.ok) throw new Error('HTTP ' + response.status);
-        const html = await response.text();
-        if (!html.includes('configurator') || !html.includes('sizeConfiguratorCode')) {
-          throw new Error('La version avec configurateur est incomplète.');
-        }
+        var html = await response.text();
+        if (!html.includes('id="app-content"') || !html.includes('function render()')) throw new Error('La source du configurateur est incomplète.');
+        html = html
+          .replace(/ROUIBA/gi, 'BIRTOUTA')
+          .replace('Zone Industrielle de BIRTOUTA, Alger', '<a href="https://maps.app.goo.gl/UXCUg1bLVHbqtppz8" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Zone Industrielle de BIRTOUTA, Alger</a>')
+          .replace('<div class="w-9 h-9 rounded-lg bg-amber-700 text-white flex items-center justify-center font-bold text-lg">DZ</div>', '<img src="' + logoUrl + '" alt="KBDOOR — Portes WPC" class="h-9 w-9 object-contain rounded-lg" width="40" height="40">')
+          .replaceAll('DZ-WPC', 'KBDOOR')
+          .replaceAll('+213 (0) 550 12 34 56', '+213 796 05 18 01')
+          .replaceAll('213550123456', '213796051801')
+          .replaceAll('contact@dz-wpc.dz', 'pedrobrono@gmail.com');
+        var renderEnd = html.lastIndexOf('    render();');
+        if (renderEnd < 0) throw new Error('Insertion du configurateur impossible.');
+        var end = renderEnd + '    render();'.length;
+        html = html.slice(0, end) + '\n' + customCode + html.slice(end);
         document.open();
         document.write(html);
         document.close();
