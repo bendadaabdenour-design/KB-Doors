@@ -85,6 +85,7 @@
         if (renderEnd < 0) throw new Error('Insertion du correctif des images impossible.');
         const end = renderEnd + '    render();'.length;
         html = html.slice(0, end) + '\n' + imageCode + html.slice(end);
+        html = html.replace('</body>', '<script src="' + raw + 'email.js"></script></body>');
         document.open();
         document.write(html);
         document.close();
