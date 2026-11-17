@@ -1,7 +1,6 @@
 /*
  * Email notifications for orders and quote requests, sent through FormSubmit.
- * The recipient address is public in client-side code; use FormSubmit's
- * activation and spam protections, and do not put private credentials here.
+ * This script must never prevent the storefront's own actions from running.
  */
 window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
   recipient: 'bendadaabdenour@gmail.com'
@@ -35,8 +34,7 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
       throw new Error('Adresse destinataire FormSubmit manquante dans email.js.');
     }
 
-    const endpoint = `https://formsubmit.co/ajax/${encodeURIComponent(config.recipient)}`;
-    const response = await fetch(endpoint, {
+    const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(config.recipient)}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,8 +56,7 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
     }
 
     if (!response.ok || result.success === false || result.success === 'false') {
-      const reason = result.message || result.error || responseText || 'Échec de l’envoi du courriel.';
-      throw new Error(reason);
+      throw new Error(result.message || result.error || responseText || 'Échec de l’envoi du courriel.');
     }
   }
 
@@ -72,36 +69,48 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
     confirmation.appendChild(notice);
   }
 
+  // Keep the cart action working even if optional email details cannot be read.
   const originalAddToCart = window.addToCart;
   if (typeof originalAddToCart === 'function') {
     window.addToCart = function addToCartWithFullDetails() {
-      const options = {
-        handle: state.config.handle,
-        frame: state.config.frame
-      };
-      originalAddToCart.apply(this, arguments);
-      const item = state.cart[state.cart.length - 1];
-      if (item) Object.assign(item, options);
-      saveCart();
+      const result = originalAddToCart.apply(this, arguments);
+      try {
+        const item = state.cart[state.cart.length - 1];
+        if (item) {
+          item.handle = state.config?.handle || item.handle;
+          item.frame = state.config?.frame || item.frame;
+          if (typeof saveCart === 'function') saveCart();
+        }
+      } catch (error) {
+        console.warn('Détails optionnels de la commande indisponibles :', error);
+      }
+      return result;
     };
   }
 
   const originalSubmitOrder = window.submitOrder;
   if (typeof originalSubmitOrder === 'function') {
     window.submitOrder = async function submitOrderAndEmail(totalAmount) {
-      const order = {
-        id: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
-        client: document.getElementById('order-name')?.value.trim() || '',
-        phone: document.getElementById('order-phone')?.value.trim() || '',
-        address: document.getElementById('order-address')?.value.trim() || '',
-        wilaya: state.selectedWilaya?.name || '',
-        shipping: Number(state.selectedWilaya?.fee) || 0,
-        payment: state.paymentMethod || '',
-        total: Number(totalAmount) || 0,
-        items: state.cart.map(item => ({ ...item }))
-      };
+      let order = null;
+      try {
+        order = {
+          id: 'CMD-' + Math.floor(100000 + Math.random() * 900000),
+          client: document.getElementById('order-name')?.value.trim() || '',
+          phone: document.getElementById('order-phone')?.value.trim() || '',
+          address: document.getElementById('order-address')?.value.trim() || '',
+          wilaya: state.selectedWilaya?.name || '',
+          shipping: Number(state.selectedWilaya?.fee) || 0,
+          payment: state.paymentMethod || '',
+          total: Number(totalAmount) || 0,
+          items: state.cart.map(item => ({ ...item }))
+        };
+      } catch (error) {
+        console.warn('Impossible de préparer les détails e-mail de la commande :', error);
+      }
 
-      await originalSubmitOrder.apply(this, arguments);
+      // Run the shop's original order flow first; email is only an additional notice.
+      const result = await originalSubmitOrder.apply(this, arguments);
+      if (!order) return result;
 
       try {
         const itemList = order.items.map(itemDetails).join('\n\n');
@@ -125,45 +134,56 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
         console.error('Notification e-mail de commande impossible :', error);
         showOrderEmailStatus('La commande est enregistrée, mais la notification e-mail n’a pas pu être envoyée. Contactez-nous par téléphone.', false);
       }
+      return result;
     };
   }
 
   const originalSubmitContact = window.submitContact;
   if (typeof originalSubmitContact === 'function') {
     window.submitContact = async function submitContactAndEmail() {
-      const name = document.getElementById('contact-name')?.value.trim() || '';
-      const phone = document.getElementById('contact-phone')?.value.trim() || '';
-      const wilaya = document.getElementById('contact-wilaya')?.value || '';
-      const message = document.getElementById('contact-msg')?.value.trim() || '';
-      const isConfiguredQuote = Boolean(state.prefillContact);
-      const quoteItems = isConfiguredQuote ? [{
-        productName: state.selectedProduct?.name,
-        qty: state.config?.qty,
-        unitPrice: calculateConfigTotal().unitPrice,
-        color: state.config?.color?.name,
-        dimension: state.config?.dimension?.label,
-        opening: state.config?.opening,
-        handle: state.config?.handle,
-        frame: state.config?.frame
-      }] : [];
+      let contact = null;
+      try {
+        contact = {
+          name: document.getElementById('contact-name')?.value.trim() || '',
+          phone: document.getElementById('contact-phone')?.value.trim() || '',
+          wilaya: document.getElementById('contact-wilaya')?.value || '',
+          message: document.getElementById('contact-msg')?.value.trim() || ''
+        };
+        const isConfiguredQuote = Boolean(state.prefillContact);
+        contact.quoteItems = isConfiguredQuote ? [{
+          productName: state.selectedProduct?.name,
+          qty: state.config?.qty,
+          unitPrice: calculateConfigTotal().unitPrice,
+          color: state.config?.color?.name,
+          dimension: state.config?.dimension?.label,
+          opening: state.config?.opening,
+          handle: state.config?.handle,
+          frame: state.config?.frame
+        }] : [];
+      } catch (error) {
+        console.warn('Impossible de préparer les détails e-mail du devis :', error);
+      }
 
-      await originalSubmitContact.apply(this, arguments);
+      const result = await originalSubmitContact.apply(this, arguments);
+      if (!contact || !contact.name || !contact.phone || !contact.message) return result;
 
       try {
-        const items = quoteItems.length ? quoteItems.map(itemDetails).join('\n\n') : 'Articles/quantités : détaillés dans le message du client.';
+        const items = contact.quoteItems.length
+          ? contact.quoteItems.map(itemDetails).join('\n\n')
+          : 'Articles/quantités : détaillés dans le message du client.';
         const body = [
           'Nouvelle demande de devis',
-          `Client : ${name}`,
-          `Téléphone : ${phone}`,
-          `Wilaya : ${wilaya}`,
+          `Client : ${contact.name}`,
+          `Téléphone : ${contact.phone}`,
+          `Wilaya : ${contact.wilaya}`,
           '',
           'ARTICLES ET QUANTITÉS :',
           items,
           '',
           'MESSAGE / DÉTAILS DU PROJET :',
-          message
+          contact.message
         ].join('\n');
-        await sendEmail(`Demande de devis KBDOOR — ${name || 'Client'}`, body, 'devis');
+        await sendEmail(`Demande de devis KBDOOR — ${contact.name || 'Client'}`, body, 'devis');
         const feedback = document.getElementById('contact-feedback');
         if (feedback) feedback.textContent = 'Votre demande a bien été enregistrée et envoyée par e-mail à notre équipe.';
       } catch (error) {
@@ -175,6 +195,7 @@ window.KBDOOR_EMAIL_CONFIG = window.KBDOOR_EMAIL_CONFIG || {
           feedback.classList.add('text-amber-700');
         }
       }
+      return result;
     };
   }
 })();
