@@ -22,8 +22,6 @@
           throw new Error('Le fichier de l’application est incomplet.');
         }
 
-        // Personnalisation KBDOOR, configuration Supabase et enregistrement
-        // atomique des commandes avec leurs articles.
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
@@ -42,7 +40,7 @@
               <button type="button" onclick="closeAccountModal()" aria-label="Fermer" class="absolute right-4 top-4 rounded-lg p-2 text-stone-500 hover:bg-stone-100">✕</button>
               <h2 id="account-title" class="text-2xl font-bold text-stone-900">Mon compte</h2>
               <p class="mt-1 mb-5 text-sm text-stone-600">Créez un compte ou connectez-vous.</p>
-              <div id="account-config-warning" class="hidden mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">La connexion aux comptes n’est pas configurée. Vérifiez la configuration Supabase du site.</div>
+              <div id="account-config-warning" class="hidden mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Supabase Auth n’est pas chargé ou sa configuration est invalide. Vérifiez l’URL, la clé publique et le fournisseur E-mail dans Supabase.</div>
               <div id="account-auth-form">
                 <div class="mb-5 grid grid-cols-2 rounded-xl bg-stone-100 p-1">
                   <button id="account-login-tab" type="button" onclick="setAccountMode('login')" class="rounded-lg bg-white px-3 py-2 text-sm font-semibold shadow">Connexion</button>
@@ -114,7 +112,7 @@
 
               document.getElementById('account-form').addEventListener('submit', async function (event) {
                 event.preventDefault();
-                if (!accountClient) return showFeedback('La connexion Supabase n’est pas disponible. Vérifiez l’URL et la clé publique.', true);
+                if (!accountClient) return showFeedback('Supabase Auth est indisponible. Rechargez la page et vérifiez la configuration.', true);
 
                 const email = document.getElementById('account-email').value.trim();
                 const password = document.getElementById('account-password').value;
@@ -124,23 +122,33 @@
 
                 try {
                   const result = accountMode === 'signup'
-                    ? await accountClient.auth.signUp({ email: email, password: password })
+                    ? await accountClient.auth.signUp({
+                        email: email,
+                        password: password,
+                        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+                      })
                     : await accountClient.auth.signInWithPassword({ email: email, password: password });
                   if (result.error) throw result.error;
 
                   if (accountMode === 'signup' && !result.data.session) {
-                    showFeedback('Compte créé. Consultez votre boîte e-mail pour confirmer votre inscription.', false);
+                    showFeedback('Compte créé. Consultez votre boîte e-mail pour confirmer l’inscription, puis connectez-vous.', false);
+                    document.getElementById('account-password').value = '';
+                    window.setAccountMode('login');
                   } else {
                     updateAccountUI(result.data.user);
                     window.closeAccountModal();
                   }
                 } catch (error) {
-                  const messages = {
-                    'Invalid login credentials': 'E-mail ou mot de passe incorrect.',
-                    'User already registered': 'Un compte existe déjà avec cette adresse e-mail.',
-                    'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.'
-                  };
-                  showFeedback(messages[error.message] || error.message || 'Une erreur est survenue. Réessayez.', true);
+                  const message = error.message || '';
+                  if (/invalid login credentials/i.test(message)) {
+                    showFeedback('E-mail ou mot de passe incorrect. Vérifiez aussi que votre adresse e-mail est confirmée.', true);
+                  } else if (/already registered|already been registered/i.test(message)) {
+                    showFeedback('Un compte existe déjà avec cette adresse e-mail. Essayez de vous connecter.', true);
+                  } else if (/password.*(6 characters|at least)/i.test(message)) {
+                    showFeedback('Le mot de passe doit contenir au moins 6 caractères.', true);
+                  } else {
+                    showFeedback(message || 'Une erreur est survenue. Vérifiez les paramètres Supabase Auth.', true);
+                  }
                 } finally {
                   button.disabled = false;
                   button.textContent = accountMode === 'login' ? 'Se connecter' : 'Créer mon compte';
@@ -156,10 +164,14 @@
 
               const config = window.KBDOOR_SUPABASE_CONFIG;
               if (window.supabase && config && config.url && config.anonKey) {
-                accountClient = window.supabase.createClient(config.url, config.anonKey);
+                accountClient = window.supabase.createClient(config.url, config.anonKey, {
+                  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+                });
                 accountClient.auth.getSession().then(function (result) {
                   if (result.error) console.error('Erreur de session Supabase:', result.error);
-                  updateAccountUI(result.data.session && result.data.session.user);
+                  updateAccountUI(result.data && result.data.session && result.data.session.user);
+                }).catch(function (error) {
+                  console.error('Impossible de récupérer la session Supabase:', error);
                 });
                 accountClient.auth.onAuthStateChange(function (_event, session) {
                   updateAccountUI(session && session.user);
