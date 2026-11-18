@@ -22,8 +22,8 @@
           throw new Error('Le fichier de l’application est incomplet.');
         }
 
-        // Keep storefront customizations, configure Supabase, and route orders
-        // through the atomic RPC that stores both the order and its article rows.
+        // Personnalisation KBDOOR, configuration Supabase et enregistrement
+        // atomique des commandes avec leurs articles.
         html = html
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
@@ -37,11 +37,11 @@
           .replace('body: JSON.stringify(payload)\n        });', "body: JSON.stringify(table === 'commandes' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + await response.text());");
 
         const accountEnhancements = `
-          <div id="account-modal" class="hidden fixed inset-0 z-[100] bg-stone-950/60 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="account-title">
+          <div id="account-modal" class="hidden fixed inset-0 z-[100] bg-stone-950/60 p-4 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="account-title">
             <div class="relative w-full max-w-md rounded-2xl bg-white p-6 sm:p-8 shadow-2xl">
               <button type="button" onclick="closeAccountModal()" aria-label="Fermer" class="absolute right-4 top-4 rounded-lg p-2 text-stone-500 hover:bg-stone-100">✕</button>
               <h2 id="account-title" class="text-2xl font-bold text-stone-900">Mon compte</h2>
-              <p class="mt-1 mb-5 text-sm text-stone-600">Créez un compte ou connectez-vous pour retrouver votre session.</p>
+              <p class="mt-1 mb-5 text-sm text-stone-600">Créez un compte ou connectez-vous.</p>
               <div id="account-config-warning" class="hidden mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">La connexion aux comptes n’est pas configurée. Vérifiez la configuration Supabase du site.</div>
               <div id="account-auth-form">
                 <div class="mb-5 grid grid-cols-2 rounded-xl bg-stone-100 p-1">
@@ -51,7 +51,7 @@
                 <form id="account-form" class="space-y-4">
                   <div><label for="account-email" class="mb-1 block text-sm font-semibold">Adresse e-mail</label><input id="account-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="vous@exemple.com"></div>
                   <div><label for="account-password" class="mb-1 block text-sm font-semibold">Mot de passe</label><input id="account-password" type="password" autocomplete="current-password" minlength="6" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="6 caractères minimum"></div>
-                  <p id="account-feedback" role="status" class="hidden text-sm"></p>
+                  <p id="account-feedback" role="status" aria-live="polite" class="hidden text-sm"></p>
                   <button id="account-submit" type="submit" class="w-full rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-600">Se connecter</button>
                 </form>
               </div>
@@ -79,7 +79,8 @@
                 document.getElementById('account-auth-form').classList.toggle('hidden', signedIn);
                 document.getElementById('account-signed-in').classList.toggle('hidden', !signedIn);
                 document.getElementById('account-config-warning').classList.add('hidden');
-                document.getElementById('account-nav-button').textContent = signedIn ? 'Mon compte' : 'Connexion';
+                const navButton = document.getElementById('account-nav-button');
+                if (navButton) navButton.textContent = signedIn ? 'Mon compte' : 'Connexion';
                 if (signedIn) document.getElementById('account-user-email').textContent = user.email || '';
               }
 
@@ -88,58 +89,81 @@
                 modal.classList.add('flex');
                 if (!accountClient) document.getElementById('account-config-warning').classList.remove('hidden');
               };
-n              window.closeAccountModal = function () { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+
+              window.closeAccountModal = function () {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+              };
+
               window.setAccountMode = function (mode) {
-                accountMode = mode;
-                const login = mode === 'login';
+                accountMode = mode === 'signup' ? 'signup' : 'login';
+                const login = accountMode === 'login';
                 document.getElementById('account-login-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (login ? 'bg-white shadow' : 'text-stone-600');
                 document.getElementById('account-signup-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (!login ? 'bg-white shadow' : 'text-stone-600');
                 document.getElementById('account-submit').textContent = login ? 'Se connecter' : 'Créer mon compte';
                 document.getElementById('account-password').autocomplete = login ? 'current-password' : 'new-password';
                 feedback.classList.add('hidden');
               };
+
               window.signOutAccount = async function () {
                 if (!accountClient) return;
-                const result = await accountClient.auth.signOut();
-                if (result.error) return showFeedback(result.error.message, true);
+                const { error } = await accountClient.auth.signOut();
+                if (error) return showFeedback(error.message, true);
                 window.closeAccountModal();
               };
 
               document.getElementById('account-form').addEventListener('submit', async function (event) {
                 event.preventDefault();
-                if (!accountClient) return showFeedback('La connexion Supabase n’est pas disponible.', true);
+                if (!accountClient) return showFeedback('La connexion Supabase n’est pas disponible. Vérifiez l’URL et la clé publique.', true);
+
                 const email = document.getElementById('account-email').value.trim();
                 const password = document.getElementById('account-password').value;
                 const button = document.getElementById('account-submit');
                 button.disabled = true;
                 button.textContent = 'Veuillez patienter…';
+
                 try {
                   const result = accountMode === 'signup'
                     ? await accountClient.auth.signUp({ email: email, password: password })
                     : await accountClient.auth.signInWithPassword({ email: email, password: password });
                   if (result.error) throw result.error;
+
                   if (accountMode === 'signup' && !result.data.session) {
-                    showFeedback('Compte créé, mais Supabase exige une confirmation par e-mail. Désactivez la confirmation des e-mails dans Supabase pour connecter automatiquement le nouveau compte.', true);
+                    showFeedback('Compte créé. Consultez votre boîte e-mail pour confirmer votre inscription.', false);
                   } else {
                     updateAccountUI(result.data.user);
                     window.closeAccountModal();
                   }
                 } catch (error) {
-                  showFeedback(error.message || 'Une erreur est survenue. Réessayez.', true);
+                  const messages = {
+                    'Invalid login credentials': 'E-mail ou mot de passe incorrect.',
+                    'User already registered': 'Un compte existe déjà avec cette adresse e-mail.',
+                    'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.'
+                  };
+                  showFeedback(messages[error.message] || error.message || 'Une erreur est survenue. Réessayez.', true);
                 } finally {
                   button.disabled = false;
                   button.textContent = accountMode === 'login' ? 'Se connecter' : 'Créer mon compte';
                 }
               });
 
-              modal.addEventListener('click', function (event) { if (event.target === modal) window.closeAccountModal(); });
-              document.addEventListener('keydown', function (event) { if (event.key === 'Escape') window.closeAccountModal(); });
+              modal.addEventListener('click', function (event) {
+                if (event.target === modal) window.closeAccountModal();
+              });
+              document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') window.closeAccountModal();
+              });
 
               const config = window.KBDOOR_SUPABASE_CONFIG;
               if (window.supabase && config && config.url && config.anonKey) {
                 accountClient = window.supabase.createClient(config.url, config.anonKey);
-                accountClient.auth.getSession().then(function (result) { updateAccountUI(result.data.session && result.data.session.user); });
-                accountClient.auth.onAuthStateChange(function (_event, session) { updateAccountUI(session && session.user); });
+                accountClient.auth.getSession().then(function (result) {
+                  if (result.error) console.error('Erreur de session Supabase:', result.error);
+                  updateAccountUI(result.data.session && result.data.session.user);
+                });
+                accountClient.auth.onAuthStateChange(function (_event, session) {
+                  updateAccountUI(session && session.user);
+                });
               }
             })();
           <\/script>
