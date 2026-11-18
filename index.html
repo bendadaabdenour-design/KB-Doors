@@ -32,16 +32,130 @@
           .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com')
           .replace('const SUPABASE_URL = "";', 'const SUPABASE_URL = window.KBDOOR_SUPABASE_CONFIG?.url || "";')
           .replace('const SUPABASE_ANON_KEY = "";', 'const SUPABASE_ANON_KEY = window.KBDOOR_SUPABASE_CONFIG?.anonKey || "";')
-          .replace('SUPABASE_URL ? \'Connecté à Supabase\' : \'Stockage local actif\'', 'SUPABASE_URL && SUPABASE_ANON_KEY ? \'Connecté à Supabase\' : \'Stockage local actif\'')
-          .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', 'const isOrder = table === \'commandes\'; const endpoint = isOrder ? \'/rest/v1/rpc/enregistrer_commande\' : \'/rest/v1/\' + table; const response = await fetch(SUPABASE_URL + endpoint, {')
-          .replace('body: JSON.stringify(payload)\n        });', 'body: JSON.stringify(table === \'commandes\' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error(\'HTTP \' + response.status + \': \' + await response.text());');
+          .replace("SUPABASE_URL ? 'Connecté à Supabase' : 'Stockage local actif'", "SUPABASE_URL && SUPABASE_ANON_KEY ? 'Connecté à Supabase' : 'Stockage local actif'")
+          .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', "const isOrder = table === 'commandes'; const endpoint = isOrder ? '/rest/v1/rpc/enregistrer_commande' : '/rest/v1/' + table; const response = await fetch(SUPABASE_URL + endpoint, {")
+          .replace('body: JSON.stringify(payload)\n        });', "body: JSON.stringify(table === 'commandes' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + await response.text());");
+
+        const accountEnhancements = `
+          <div id="account-modal" class="hidden fixed inset-0 z-[100] bg-stone-950/60 p-4 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="account-title">
+            <div class="relative w-full max-w-md rounded-2xl bg-white p-6 sm:p-8 shadow-2xl">
+              <button type="button" onclick="closeAccountModal()" aria-label="Fermer" class="absolute right-4 top-4 rounded-lg p-2 text-stone-500 hover:bg-stone-100">✕</button>
+              <h2 id="account-title" class="text-2xl font-bold text-stone-900">Mon compte</h2>
+              <p class="mt-1 mb-5 text-sm text-stone-600">Créez un compte ou connectez-vous pour retrouver votre session.</p>
+              <div id="account-config-warning" class="hidden mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">La connexion aux comptes n’est pas configurée. Vérifiez la configuration Supabase du site.</div>
+              <div id="account-auth-form">
+                <div class="mb-5 grid grid-cols-2 rounded-xl bg-stone-100 p-1">
+                  <button id="account-login-tab" type="button" onclick="setAccountMode('login')" class="rounded-lg bg-white px-3 py-2 text-sm font-semibold shadow">Connexion</button>
+                  <button id="account-signup-tab" type="button" onclick="setAccountMode('signup')" class="rounded-lg px-3 py-2 text-sm font-semibold text-stone-600">Créer un compte</button>
+                </div>
+                <form id="account-form" class="space-y-4">
+                  <div><label for="account-email" class="mb-1 block text-sm font-semibold">Adresse e-mail</label><input id="account-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="vous@exemple.com"></div>
+                  <div><label for="account-password" class="mb-1 block text-sm font-semibold">Mot de passe</label><input id="account-password" type="password" autocomplete="current-password" minlength="6" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="6 caractères minimum"></div>
+                  <p id="account-feedback" role="status" class="hidden text-sm"></p>
+                  <button id="account-submit" type="submit" class="w-full rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-600">Se connecter</button>
+                </form>
+              </div>
+              <div id="account-signed-in" class="hidden">
+                <p class="mb-5 text-sm text-stone-700">Vous êtes connecté avec <strong id="account-user-email"></strong>.</p>
+                <button type="button" onclick="signOutAccount()" class="w-full rounded-xl border border-stone-300 px-4 py-3 font-semibold hover:bg-stone-50">Se déconnecter</button>
+              </div>
+            </div>
+          </div>
+          <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+          <script>
+            (function () {
+              let accountClient = null;
+              let accountMode = 'login';
+              const modal = document.getElementById('account-modal');
+              const feedback = document.getElementById('account-feedback');
+
+              function showFeedback(message, isError) {
+                feedback.textContent = message;
+                feedback.className = 'text-sm ' + (isError ? 'text-red-700' : 'text-emerald-700');
+              }
+
+              function updateAccountUI(user) {
+                const signedIn = Boolean(user);
+                document.getElementById('account-auth-form').classList.toggle('hidden', signedIn);
+                document.getElementById('account-signed-in').classList.toggle('hidden', !signedIn);
+                document.getElementById('account-config-warning').classList.add('hidden');
+                document.getElementById('account-nav-button').textContent = signedIn ? 'Mon compte' : 'Connexion';
+                if (signedIn) document.getElementById('account-user-email').textContent = user.email || '';
+              }
+
+              window.openAccountModal = function () {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                if (!accountClient) document.getElementById('account-config-warning').classList.remove('hidden');
+              };
+              window.closeAccountModal = function () { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+              window.setAccountMode = function (mode) {
+                accountMode = mode;
+                const login = mode === 'login';
+                document.getElementById('account-login-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (login ? 'bg-white shadow' : 'text-stone-600');
+                document.getElementById('account-signup-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (!login ? 'bg-white shadow' : 'text-stone-600');
+                document.getElementById('account-submit').textContent = login ? 'Se connecter' : 'Créer mon compte';
+                document.getElementById('account-password').autocomplete = login ? 'current-password' : 'new-password';
+                feedback.classList.add('hidden');
+              };
+              window.signOutAccount = async function () {
+                if (!accountClient) return;
+                const result = await accountClient.auth.signOut();
+                if (result.error) return showFeedback(result.error.message, true);
+                window.closeAccountModal();
+              };
+
+              document.getElementById('account-form').addEventListener('submit', async function (event) {
+                event.preventDefault();
+                if (!accountClient) return showFeedback('La connexion Supabase n’est pas disponible.', true);
+                const email = document.getElementById('account-email').value.trim();
+                const password = document.getElementById('account-password').value;
+                const button = document.getElementById('account-submit');
+                button.disabled = true;
+                button.textContent = 'Veuillez patienter…';
+                try {
+                  const result = accountMode === 'signup'
+                    ? await accountClient.auth.signUp({ email: email, password: password })
+                    : await accountClient.auth.signInWithPassword({ email: email, password: password });
+                  if (result.error) throw result.error;
+                  if (accountMode === 'signup' && !result.data.session) {
+                    showFeedback('Compte créé. Vérifiez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.', false);
+                  } else {
+                    showFeedback(accountMode === 'signup' ? 'Votre compte a été créé et vous êtes connecté.' : 'Connexion réussie.', false);
+                    updateAccountUI(result.data.user);
+                    setTimeout(window.closeAccountModal, 900);
+                  }
+                } catch (error) {
+                  showFeedback(error.message || 'Une erreur est survenue. Réessayez.', true);
+                } finally {
+                  button.disabled = false;
+                  button.textContent = accountMode === 'login' ? 'Se connecter' : 'Créer mon compte';
+                }
+              });
+
+              modal.addEventListener('click', function (event) { if (event.target === modal) window.closeAccountModal(); });
+              document.addEventListener('keydown', function (event) { if (event.key === 'Escape') window.closeAccountModal(); });
+
+              const config = window.KBDOOR_SUPABASE_CONFIG;
+              if (window.supabase && config && config.url && config.anonKey) {
+                accountClient = window.supabase.createClient(config.url, config.anonKey);
+                accountClient.auth.getSession().then(function (result) { updateAccountUI(result.data.session && result.data.session.user); });
+                accountClient.auth.onAuthStateChange(function (_event, session) { updateAccountUI(session && session.user); });
+              }
+            })();
+          <\/script>
+        `;
+
+        html = html
+          .replace('<!-- Bouton Mobile -->', '<button id="account-nav-button" type="button" onclick="openAccountModal()" class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 hover:border-amber-600 hover:text-amber-700">Connexion</button>\n        <!-- Bouton Mobile -->')
+          .replace('</body>', accountEnhancements + '\n</body>');
 
         document.open();
         document.write(html);
         document.close();
       } catch (error) {
         console.error('Échec du chargement de KBDOOR :', error);
-        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion Internet puis rechargez la page. Si le problème persiste, contactez bendadaabdenour@gmail.com.</p></main>';
+        document.body.innerHTML = '<main style="max-width:38rem;margin:4rem auto;padding:1.5rem;font:16px/1.5 sans-serif;color:#292524"><h1>Le site KBDOOR n’a pas pu être chargé.</h1><p>Vérifiez votre connexion Internet puis actualisez la page.</p></main>';
       }
     })();
   </script>
