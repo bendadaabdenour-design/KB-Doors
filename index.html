@@ -88,7 +88,7 @@
                 modal.classList.add('flex');
                 if (!accountClient) document.getElementById('account-config-warning').classList.remove('hidden');
               };
-              window.closeAccountModal = function () { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+n              window.closeAccountModal = function () { modal.classList.add('hidden'); modal.classList.remove('flex'); };
               window.setAccountMode = function (mode) {
                 accountMode = mode;
                 const login = mode === 'login';
@@ -119,11 +119,10 @@
                     : await accountClient.auth.signInWithPassword({ email: email, password: password });
                   if (result.error) throw result.error;
                   if (accountMode === 'signup' && !result.data.session) {
-                    showFeedback('Compte créé. Vérifiez votre boîte e-mail pour confirmer votre adresse avant de vous connecter.', false);
+                    showFeedback('Compte créé, mais Supabase exige une confirmation par e-mail. Désactivez la confirmation des e-mails dans Supabase pour connecter automatiquement le nouveau compte.', true);
                   } else {
-                    showFeedback(accountMode === 'signup' ? 'Votre compte a été créé et vous êtes connecté.' : 'Connexion réussie.', false);
                     updateAccountUI(result.data.user);
-                    setTimeout(window.closeAccountModal, 900);
+                    window.closeAccountModal();
                   }
                 } catch (error) {
                   showFeedback(error.message || 'Une erreur est survenue. Réessayez.', true);
