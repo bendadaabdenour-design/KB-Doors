@@ -23,168 +23,191 @@
         }
 
         html = html
+          .replace("Fabricant algérien spécialisé dans les portes d'intérieur en composite bois-polymère (WPC) haute résistance. Usine et showroom basés à Rouiba, Alger.", "Fabricant algérien spécialisé dans les portes d'intérieur en composite bois-polymère (WPC) haute résistance. Usine et showroom basés à BIRTOUTA, Alger.")
+          .replace("Usine et showroom basés à BIRTOUTA, Alger.", 'Usine et showroom basés à <a href="https://maps.app.goo.gl/iTtm4vZfanYV4fM18" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">BIRTOUTA, Alger</a>.')
+          .replace('Zone Industrielle de Rouiba, Alger', '<a href="https://maps.app.goo.gl/iTtm4vZfanYV4fM18" target="_blank" rel="noopener noreferrer" class="hover:text-amber-400 underline">Zone Industrielle de BIRTOUTA, Alger</a>')
+          .replace('+213 (0) 550 12 34 56', '<a href="tel:+33669091152" class="hover:text-amber-400 underline">0033669091152</a>')
+          .replace('contact@dz-wpc.dz', '<a href="mailto:bendadaabdenour@gmail.com" class="hover:text-amber-400 underline">bendadaabdenour@gmail.com</a>')
           .replace(/ROUIBA/gi, 'BIRTOUTA')
           .replaceAll('DZ-WPC', 'KBDOOR')
-          .replaceAll('+213 (0) 550 12 34 56', '0033669091152')
           .replaceAll('213550123456', '33669091152')
-          .replaceAll('contact@dz-wpc.dz', 'bendadaabdenour@gmail.com')
+          .replace('<button onclick="navigate(\'contact\')" class="nav-link hover:text-amber-700 transition" data-page="contact">Contact & Devis</button>', '<button onclick="navigate(\'contact\')" class="nav-link hover:text-amber-700 transition" data-page="contact">Contact & Devis</button>\n        <button onclick="navigate(\'tracking\')" class="nav-link hover:text-amber-700 transition" data-page="tracking">Suivre ma commande</button>')
+          .replace('<button onclick="navigate(\'contact\'); toggleMobileMenu()" class="block w-full text-left py-2 font-medium text-stone-700">Contact & Devis</button>', '<button onclick="navigate(\'contact\'); toggleMobileMenu()" class="block w-full text-left py-2 font-medium text-stone-700">Contact & Devis</button>\n      <button onclick="navigate(\'tracking\'); toggleMobileMenu()" class="block w-full text-left py-2 font-medium text-stone-700">Suivre ma commande</button>')
+          .replace('<li><button onclick="navigate(\'contact\')" class="hover:text-amber-400">Demander un devis</button></li>', '<li><button onclick="navigate(\'contact\')" class="hover:text-amber-400">Demander un devis</button></li>\n          <li><button onclick="navigate(\'tracking\')" class="hover:text-amber-400">Suivre ma commande</button></li>')
           .replace('const SUPABASE_URL = "";', 'const SUPABASE_URL = window.KBDOOR_SUPABASE_CONFIG?.url || "";')
           .replace('const SUPABASE_ANON_KEY = "";', 'const SUPABASE_ANON_KEY = window.KBDOOR_SUPABASE_CONFIG?.anonKey || "";')
           .replace("SUPABASE_URL ? 'Connecté à Supabase' : 'Stockage local actif'", "SUPABASE_URL && SUPABASE_ANON_KEY ? 'Connecté à Supabase' : 'Stockage local actif'")
           .replace('await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {', "const isOrder = table === 'commandes'; const endpoint = isOrder ? '/rest/v1/rpc/enregistrer_commande' : '/rest/v1/' + table; const response = await fetch(SUPABASE_URL + endpoint, {")
-          .replace('body: JSON.stringify(payload)\n        });', "body: JSON.stringify(table === 'commandes' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + await response.text());");
+          .replace('body: JSON.stringify(payload)\n        });', "body: JSON.stringify(table === 'commandes' ? { p_order: payload } : payload)\n        });\n        if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + await response.text());")
+          .replace('catch (e) { console.error("Erreur Supabase:", e); }', 'catch (e) { console.error("Erreur Supabase:", e); if (table === "commandes") throw e; }')
+          .replace("await saveToSupabase('commandes', orderRecord);", "try {\n        await saveToSupabase('commandes', orderRecord);\n      } catch (error) {\n        document.getElementById('app-content').innerHTML = '<div class=\"max-w-xl mx-auto px-4 py-20 text-center\"><h1 class=\"text-2xl font-bold text-red-700 mb-3\">Commande non confirmée</h1><p class=\"text-stone-700\">La commande ' + orderRecord.id + ' n’a pas pu être enregistrée dans notre base. Réessayez ou contactez-nous au <a href=\"tel:+33669091152\" class=\"font-semibold text-amber-700 underline\">0033669091152</a>.</p></div>';\n        return;\n      }")
+          .replace(/<button onclick="navigate\('admin'\)"[^>]*>Espace Administrateur<\/button>\s*/, '')
+          .replace("payment: state.paymentMethod,\n        total: formatDA(totalAmount),", "payment: state.paymentMethod,\n        status: 'Commande reçue - en attente de confirmation',\n        total: formatDA(totalAmount),")
+          .replace("else if (state.page === 'contact') container.innerHTML = renderContact();", "else if (state.page === 'contact') container.innerHTML = renderContact();\n      else if (state.page === 'tracking') container.innerHTML = renderOrderTracking();");
 
-        const accountEnhancements = `
-          <div id="account-modal" class="hidden fixed inset-0 z-[100] bg-stone-950/60 p-4 items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="account-title">
-            <div class="relative w-full max-w-md rounded-2xl bg-white p-6 sm:p-8 shadow-2xl">
-              <button type="button" onclick="closeAccountModal()" aria-label="Fermer" class="absolute right-4 top-4 rounded-lg p-2 text-stone-500 hover:bg-stone-100">✕</button>
-              <h2 id="account-title" class="text-2xl font-bold text-stone-900">Mon compte</h2>
-              <p class="mt-1 mb-5 text-sm text-stone-600">Créez un compte ou connectez-vous.</p>
-              <div id="account-config-warning" class="hidden mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Supabase Auth n’est pas chargé ou sa configuration est invalide. Vérifiez l’URL, la clé publique et le fournisseur E-mail dans Supabase.</div>
-              <div id="account-auth-form">
-                <div class="mb-5 grid grid-cols-2 rounded-xl bg-stone-100 p-1">
-                  <button id="account-login-tab" type="button" onclick="setAccountMode('login')" class="rounded-lg bg-white px-3 py-2 text-sm font-semibold shadow">Connexion</button>
-                  <button id="account-signup-tab" type="button" onclick="setAccountMode('signup')" class="rounded-lg px-3 py-2 text-sm font-semibold text-stone-600">Créer un compte</button>
-                </div>
-                <form id="account-form" class="space-y-4">
-                  <div><label for="account-email" class="mb-1 block text-sm font-semibold">Adresse e-mail</label><input id="account-email" type="email" autocomplete="email" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="vous@exemple.com"></div>
-                  <div><label for="account-password" class="mb-1 block text-sm font-semibold">Mot de passe</label><input id="account-password" type="password" autocomplete="current-password" minlength="6" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="6 caractères minimum"></div>
-                  <p id="account-feedback" role="status" aria-live="polite" class="hidden text-sm"></p>
-                  <button id="account-submit" type="submit" class="w-full rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-600">Se connecter</button>
-                </form>
-              </div>
-              <div id="account-signed-in" class="hidden">
-                <p class="mb-5 text-sm text-stone-700">Vous êtes connecté avec <strong id="account-user-email"></strong>.</p>
-                <button type="button" onclick="signOutAccount()" class="w-full rounded-xl border border-stone-300 px-4 py-3 font-semibold hover:bg-stone-50">Se déconnecter</button>
-              </div>
-            </div>
-          </div>
-          <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+        const trackingEnhancements = `
           <script>
-            (function () {
-              let accountClient = null;
-              let accountMode = 'login';
-              const modal = document.getElementById('account-modal');
-              const feedback = document.getElementById('account-feedback');
+            function renderOrderTracking() {
+              return '<div class="max-w-2xl mx-auto px-4 sm:px-6 py-12 fade-in">' +
+                '<h1 class="text-3xl font-bold text-stone-900 mb-3">Suivre ma commande</h1>' +
+                '<p class="text-stone-600 mb-8">Saisissez le numéro de commande et le téléphone utilisés lors de votre achat.</p>' +
+                '<form onsubmit="return trackOrder(event)" class="rounded-2xl border border-stone-200 bg-white p-6 sm:p-8 shadow-sm space-y-5">' +
+                  '<div><label for="tracking-order-id" class="mb-1 block text-sm font-semibold">Numéro de commande</label><input id="tracking-order-id" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="Ex. CMD-123456"></div>' +
+                  '<div><label for="tracking-phone" class="mb-1 block text-sm font-semibold">Téléphone de la commande</label><input id="tracking-phone" type="tel" required class="w-full rounded-xl border border-stone-300 px-4 py-3 text-sm" placeholder="Numéro complet utilisé pour la commande"><p class="mt-1 text-xs text-stone-500">Saisissez le numéro complet (au moins 8 chiffres), pas seulement l’indicatif.</p></div>' +
+                  '<button type="submit" class="w-full rounded-xl bg-amber-700 px-4 py-3 font-bold text-white hover:bg-amber-600">Consulter le statut</button>' +
+                  '<div id="tracking-result" role="status" aria-live="polite"></div>' +
+                '</form>' +
+                '<p class="mt-5 text-sm text-stone-500">' +
+                  (window.KBDOOR_SUPABASE_CONFIG && window.KBDOOR_SUPABASE_CONFIG.url && window.KBDOOR_SUPABASE_CONFIG.anonKey
+                    ? 'Le suivi consulte le statut enregistré dans notre base de données.'
+                    : 'Le suivi en ligne est indisponible. Contactez-nous au <a href="tel:+33669091152" class="font-semibold text-amber-700 underline">0033669091152</a>.') +
+                '</p>' +
+              '</div>';
+            }
 
-              function showFeedback(message, isError) {
-                feedback.textContent = message;
-                feedback.className = 'text-sm ' + (isError ? 'text-red-700' : 'text-emerald-700');
+            function trackOrder(event) {
+              event.preventDefault();
+              const result = document.getElementById('tracking-result');
+              result.replaceChildren();
+
+              const orderId = document.getElementById('tracking-order-id').value.trim().toUpperCase();
+              const phone = normalizeTrackingPhone(document.getElementById('tracking-phone').value);
+              if (phone.length < 8) {
+                result.textContent = 'Saisissez le numéro de téléphone complet utilisé lors de la commande (au moins 8 chiffres).';
+                return false;
               }
-
-              function updateAccountUI(user) {
-                const signedIn = Boolean(user);
-                document.getElementById('account-auth-form').classList.toggle('hidden', signedIn);
-                document.getElementById('account-signed-in').classList.toggle('hidden', !signedIn);
-                document.getElementById('account-config-warning').classList.add('hidden');
-                const navButton = document.getElementById('account-nav-button');
-                if (navButton) navButton.textContent = signedIn ? 'Mon compte' : 'Connexion';
-                if (signedIn) document.getElementById('account-user-email').textContent = user.email || '';
-              }
-
-              window.openAccountModal = function () {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                if (!accountClient) document.getElementById('account-config-warning').classList.remove('hidden');
-              };
-
-              window.closeAccountModal = function () {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-              };
-
-              window.setAccountMode = function (mode) {
-                accountMode = mode === 'signup' ? 'signup' : 'login';
-                const login = accountMode === 'login';
-                document.getElementById('account-login-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (login ? 'bg-white shadow' : 'text-stone-600');
-                document.getElementById('account-signup-tab').className = 'rounded-lg px-3 py-2 text-sm font-semibold ' + (!login ? 'bg-white shadow' : 'text-stone-600');
-                document.getElementById('account-submit').textContent = login ? 'Se connecter' : 'Créer mon compte';
-                document.getElementById('account-password').autocomplete = login ? 'current-password' : 'new-password';
-                feedback.classList.add('hidden');
-              };
-
-              window.signOutAccount = async function () {
-                if (!accountClient) return;
-                const { error } = await accountClient.auth.signOut();
-                if (error) return showFeedback(error.message, true);
-                window.closeAccountModal();
-              };
-
-              document.getElementById('account-form').addEventListener('submit', async function (event) {
-                event.preventDefault();
-                if (!accountClient) return showFeedback('Supabase Auth est indisponible. Rechargez la page et vérifiez la configuration.', true);
-
-                const email = document.getElementById('account-email').value.trim();
-                const password = document.getElementById('account-password').value;
-                const button = document.getElementById('account-submit');
-                button.disabled = true;
-                button.textContent = 'Veuillez patienter…';
-
-                try {
-                  const result = accountMode === 'signup'
-                    ? await accountClient.auth.signUp({
-                        email: email,
-                        password: password,
-                        options: { emailRedirectTo: window.location.origin + window.location.pathname }
-                      })
-                    : await accountClient.auth.signInWithPassword({ email: email, password: password });
-                  if (result.error) throw result.error;
-
-                  if (accountMode === 'signup' && !result.data.session) {
-                    showFeedback('Compte créé. Consultez votre boîte e-mail pour confirmer l’inscription, puis connectez-vous.', false);
-                    document.getElementById('account-password').value = '';
-                    window.setAccountMode('login');
-                  } else {
-                    updateAccountUI(result.data.user);
-                    window.closeAccountModal();
-                  }
-                } catch (error) {
-                  const message = error.message || '';
-                  if (/invalid login credentials/i.test(message)) {
-                    showFeedback('E-mail ou mot de passe incorrect. Vérifiez aussi que votre adresse e-mail est confirmée.', true);
-                  } else if (/already registered|already been registered/i.test(message)) {
-                    showFeedback('Un compte existe déjà avec cette adresse e-mail. Essayez de vous connecter.', true);
-                  } else if (/password.*(6 characters|at least)/i.test(message)) {
-                    showFeedback('Le mot de passe doit contenir au moins 6 caractères.', true);
-                  } else {
-                    showFeedback(message || 'Une erreur est survenue. Vérifiez les paramètres Supabase Auth.', true);
-                  }
-                } finally {
-                  button.disabled = false;
-                  button.textContent = accountMode === 'login' ? 'Se connecter' : 'Créer mon compte';
-                }
-              });
-
-              modal.addEventListener('click', function (event) {
-                if (event.target === modal) window.closeAccountModal();
-              });
-              document.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape') window.closeAccountModal();
-              });
 
               const config = window.KBDOOR_SUPABASE_CONFIG;
-              if (window.supabase && config && config.url && config.anonKey) {
-                accountClient = window.supabase.createClient(config.url, config.anonKey, {
-                  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-                });
-                accountClient.auth.getSession().then(function (result) {
-                  if (result.error) console.error('Erreur de session Supabase:', result.error);
-                  updateAccountUI(result.data && result.data.session && result.data.session.user);
-                }).catch(function (error) {
-                  console.error('Impossible de récupérer la session Supabase:', error);
-                });
-                accountClient.auth.onAuthStateChange(function (_event, session) {
-                  updateAccountUI(session && session.user);
-                });
+              if (config && config.url && config.anonKey) {
+                result.textContent = 'Recherche de votre commande…';
+                lookupOrderStatus(orderId, phone, result, config);
+                return false;
               }
-            })();
+
+              let orders;
+              try {
+                orders = JSON.parse(localStorage.getItem('dz_wpc_orders') || '[]');
+              } catch (error) {
+                result.textContent = 'Impossible de lire les commandes enregistrées sur cet appareil.';
+                return false;
+              }
+              if (!Array.isArray(orders)) {
+                result.textContent = 'Les données locales des commandes sont invalides.';
+                return false;
+              }
+
+              const order = orders.find(item =>
+                String(item.id || '').trim().toUpperCase() === orderId &&
+                String(item.phone || '').replace(/[^0-9]/g, '') === phone
+              );
+              if (!order) {
+                result.textContent = 'Commande introuvable. Vérifiez le numéro de commande et le téléphone saisis.';
+                return false;
+              }
+              displayOrderStatus(result, order);
+              return false;
+            }
+
+            function normalizeTrackingPhone(value) {
+              return value.replace(/[^0-9]/g, '').replace(/^(?:00213|213)/, '0');
+            }
+
+            async function lookupOrderStatus(orderId, phone, result, config) {
+              try {
+                const response = await fetch(config.url.replace(/\\/$/, '') + '/rest/v1/rpc/suivre_commande', {
+                  method: 'POST',
+                  headers: {
+                    apikey: config.anonKey,
+                    Authorization: 'Bearer ' + config.anonKey,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ p_id: orderId, p_phone: phone })
+                });
+                if (!response.ok) {
+                  const error = new Error('HTTP ' + response.status + ': ' + await response.text());
+                  error.status = response.status;
+                  throw error;
+                }
+
+                const orders = await response.json();
+                if (!Array.isArray(orders)) throw new Error('Réponse de suivi invalide.');
+                if (orders.length === 0) {
+                  result.textContent = 'Aucune commande ne correspond à ces informations dans la base. Vérifiez le numéro et le téléphone. Si la commande est visible uniquement sur cet appareil, contactez-nous pour confirmer son enregistrement.';
+                  return;
+                }
+                displayOrderStatus(result, orders[0]);
+              } catch (error) {
+                console.error('Échec de la recherche de commande :', error);
+                if (error.status === 404) {
+                  result.textContent = 'La fonction de suivi n’est pas installée dans Supabase. Exécutez supabase/tracking.sql dans SQL Editor, puis réessayez.';
+                } else if (error.status === 401 || error.status === 403) {
+                  result.textContent = 'Supabase a refusé la consultation. Vérifiez la clé publique et les droits de la fonction suivre_commande.';
+                } else {
+                  result.textContent = 'Le suivi est indisponible (HTTP ' + (error.status || 'réseau') + '). Vérifiez que supabase/tracking.sql a été exécuté, puis réessayez.';
+                }
+              }
+            }
+
+            function displayOrderStatus(result, order) {
+              result.replaceChildren();
+              const card = document.createElement('div');
+              card.className = 'mt-2 rounded-xl border border-stone-200 bg-white p-5 text-stone-900';
+              const reference = document.createElement('p');
+              reference.className = 'font-semibold';
+              reference.textContent = 'Commande ' + order.id;
+              const status = document.createElement('p');
+              const currentStatus = order.status || 'Commande reçue - en attente de confirmation';
+              status.className = 'mt-1 text-sm font-semibold ' + (currentStatus === 'Annulée' ? 'text-red-700' : 'text-emerald-800');
+              status.textContent = 'Statut actuel : ' + currentStatus;
+              card.append(reference, status);
+
+              const steps = [
+                'Commande reçue - en attente de confirmation',
+                'Confirmée',
+                'En préparation',
+                'Expédiée',
+                'Livrée'
+              ];
+              if (currentStatus === 'Annulée') {
+                const note = document.createElement('p');
+                note.className = 'mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800';
+                note.textContent = 'Cette commande a été annulée. Contactez-nous si vous souhaitez plus d’informations.';
+                card.appendChild(note);
+              }
+
+              const currentStep = steps.indexOf(currentStatus);
+              const list = document.createElement('ol');
+              list.className = 'mt-6 grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-5';
+              list.setAttribute('aria-label', 'Étapes de la commande');
+              steps.forEach(function (step, index) {
+                const item = document.createElement('li');
+                item.className = 'relative flex flex-col items-center gap-2 text-center text-xs sm:text-sm';
+                if (index < steps.length - 1) {
+                  const connector = document.createElement('span');
+                  connector.setAttribute('aria-hidden', 'true');
+                  connector.className = 'absolute left-[calc(50%+14px)] top-3 hidden h-0.5 w-[calc(100%-4px)] sm:block ' +
+                    (currentStep > index ? 'bg-emerald-500' : 'bg-stone-200');
+                  item.appendChild(connector);
+                }
+                const marker = document.createElement('span');
+                const isComplete = currentStep >= 0 && index < currentStep;
+                const isCurrent = currentStep === index;
+                marker.className = 'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ' +
+                  (isComplete ? 'bg-emerald-600 text-white' : isCurrent ? 'bg-amber-700 text-white' : 'bg-stone-200 text-stone-500');
+                marker.textContent = isComplete ? '✓' : String(index + 1);
+                const label = document.createElement('span');
+                label.className = isComplete || isCurrent ? 'font-semibold text-stone-900' : 'text-stone-500';
+                label.textContent = step + (isCurrent ? ' (actuelle)' : '');
+                item.append(marker, label);
+                list.appendChild(item);
+              });
+              card.appendChild(list);
+              result.appendChild(card);
+            }
           <\/script>
         `;
 
-        html = html
-          .replace('<!-- Bouton Mobile -->', '<button id="account-nav-button" type="button" onclick="openAccountModal()" class="rounded-lg border border-stone-300 px-3 py-2 text-sm font-semibold text-stone-700 hover:border-amber-600 hover:text-amber-700">Connexion</button>\n        <!-- Bouton Mobile -->')
-          .replace('</body>', accountEnhancements + '\n</body>');
-
+        html = html.replace('</body>', trackingEnhancements + '\n</body>');
         document.open();
         document.write(html);
         document.close();
