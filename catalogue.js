@@ -80,17 +80,17 @@ window.KBDOOR_CATALOGUE = {
       basePriceDA: 48500,
       category: 'Classique',
       keywords: ['atlas', 'classique'],
-      imageUrl: './modeles/Classique/M1/1.WEBP',
+      imageUrl: './modèles/Classique/M1/1.WEBP',
       images: [
-        { label: 'Vue principale', url: './modeles/Classique/M1/1.WEBP' },
-        { label: 'Vue M2', url: './modeles/Classique/M1/2.WEBP' },
-        { label: 'Vue M3', url: './modeles/Classique/M1/3.WEBP' }
+        { label: 'Vue principale', url: './modèles/Classique/M1/1.WEBP' },
+        { label: 'Vue M2', url: './modèles/Classique/M1/2.WEBP' },
+        { label: 'Vue M3', url: './modèles/Classique/M1/3.WEBP' }
       ],
       fallbackPhotoUrl: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80',
       finitions: {
-        'Chêne Naturel': './modeles/Classique/M1/1.WEBP',
-        'Noyer Foncé': './modeles/Classique/M1/2.WEBP',
-        'Blanc Satiné': './modeles/Classique/M1/3.WEBP'
+        'Chêne Naturel': './modèles/Classique/M1/1.WEBP',
+        'Noyer Foncé': './modèles/Classique/M1/2.WEBP',
+        'Blanc Satiné': './modèles/Classique/M1/3.WEBP'
       }
     },
     {
